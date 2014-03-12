@@ -1,6 +1,3 @@
-%{
-	#include "syntax.tab.h"
-%}
 %option yylineno
 type	int|float
 relop	>|<|>=|<=|==|!=
