@@ -1,5 +1,5 @@
 %{
-	#include "syntax.tab.h"
+#include "syntax.tab.h"
 %}
 %option yylineno
 type	int|float

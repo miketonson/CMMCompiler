@@ -1,0 +1,8 @@
+!/compiler1/main.c
+!/complier1/syntax.y
+!/complier1/lexical.l
+!/complier1/syntax.tab.h
+!/complier1/syntax.tab.c
+!/complier1/lex.yy.cc
+!*.cmm
+!*.md

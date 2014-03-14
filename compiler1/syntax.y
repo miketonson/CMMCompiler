@@ -1,6 +1,6 @@
 %{
+#include <stdio.h>
 	#include "lex.yy.c"
-	#include <stdio.h>
 %}
 %token	INT
 %token	FLOAT
@@ -87,6 +87,7 @@ Exp	:	Exp ASSIGNOP Exp
 	|	ID LP Args RP
 	|	ID LP RP
 	|	Exp LB Exp RB
+    |   Exp LB error RB/*error recovery*/
 	|	Exp DOT ID
 	|	ID
 	|	INT
@@ -96,6 +97,7 @@ Args	:	Exp COMMA Args
 	|	Exp
 	;
 %%
-yyerror(char* msg) {
-	fprintf(stderr, "error: %s\n", msg);
+yyerror(char* msg)
+{
+    fprintf(stderr,"Error type B at line %d: %s\n", yylineno, msg);
 }

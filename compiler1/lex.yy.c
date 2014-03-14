@@ -528,7 +528,7 @@ int yy_flex_debug = 0;
 char *yytext;
 #line 1 "lexical.l"
 #line 2 "lexical.l"
-	#include "syntax.tab.h"
+#include "syntax.tab.h"
 #line 533 "lex.yy.c"
 
 #define INITIAL 0
