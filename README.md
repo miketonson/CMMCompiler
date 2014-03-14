@@ -1,4 +1,3 @@
-my_cmm_complier
+CMM compiler &copy;miketonson
 ===============
-
-This is a very brief complier for a C cimplified language which I call it C-- (or CMM)
+####CMM language or C-- is a C style lightweight language
