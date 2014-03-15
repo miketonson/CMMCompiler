@@ -8,4 +8,4 @@
 !*.cmm
 !*.md
 *.o
-/compiler1/parser
+parser
