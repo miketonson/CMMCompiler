@@ -3,6 +3,7 @@
 !/compiler1/lexical.l
 !/compiler1/syntax.tab.h
 !/compiler1/syntax.tab.c
-!/compiler1/lex.yy.cc
+!/compiler1/lex.yy.c
+!/compiler1/makefile
 !*.cmm
 !*.md
