@@ -7,3 +7,5 @@
 !/compiler1/makefile
 !*.cmm
 !*.md
+*.o
+*.exe
