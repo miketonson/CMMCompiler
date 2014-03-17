@@ -56,6 +56,7 @@ StmtList	:	Stmt StmtList
 		|	/*empty*/
 		;
 Stmt	:	Exp SEMI
+     	|	error SEMI/*error recovery*/
 	|	CompSt
 	|	RETURN Exp SEMI
 	|	IF LP Exp RP Stmt
@@ -66,6 +67,7 @@ DefList	:	Def DefList
 	|	/*empty*/
 	;
 Def	:	Specifier DecList SEMI
+	|	Specifier error SEMI/*error recovery*/
 	;
 DecList	:	Dec
 	|	Dec COMMA DecList
@@ -82,13 +84,16 @@ Exp	:	Exp ASSIGNOP Exp
 	|	Exp STAR Exp
 	|	Exp DIV Exp
 	|	LP Exp RP
+	|	LP error RP/*error recovery*/
 	|	MINUS Exp
 	|	NOT Exp
 	|	ID LP Args RP
+	|	ID LP error RP/*error recovery*/ 
 	|	ID LP RP
 	|	Exp LB Exp RB
-    |   Exp LB error RB/*error recovery*/
+	|	Exp LB error RB/*error recovery*/
 	|	Exp DOT ID
+/*	|	error DOT ID/*error recovery*/
 	|	ID
 	|	INT
 	|	FLOAT
