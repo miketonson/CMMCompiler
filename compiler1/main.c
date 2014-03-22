@@ -17,8 +17,8 @@ int main(int argc, char** argv){
 		return 1; 
 	}
 	yyrestart(f);
-	/*extern FILE* yydebug; */
-	/*yydebug = 1; */
+	extern FILE* yydebug; 
+	yydebug = 1; 
 	yyparse();
 	return 0;
 }

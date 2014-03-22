@@ -1,11 +1,41 @@
 %{
 #include <stdio.h>
-	#include "lex.yy.c"
+#include "lex.yy.c"
+
 %}
-%token	INT
-%token	FLOAT
-%token	ID
-%token	SEMI COMMA ASSIGNOP RELOP PLUS MINUS STAR DIV AND OR DOT NOT TYPE
+%union{
+	int type_int;
+	float type_float;
+	char* type_id;
+	enum {I,F} type_bool;
+	expnode* type_node;
+}
+%type <type_node> Program
+%type <type_node> ExtDefList
+%type <type_node> ExtDef
+%type <type_node> Specifier
+%type <type_node> ExtDecList
+%type <type_node> FunDec
+%type <type_node> CompSt
+%type <type_node> VarDec
+%type <type_node> StructSpecifier
+%type <type_node> OptTag
+%type <type_node> DefList
+%type <type_node> Tag
+%type <type_node> VarList
+%type <type_node> ParamDec
+%type <type_node> StmtList
+%type <type_node> Stmt
+%type <type_node> Exp
+%type <type_node> Def
+%type <type_node> DecList
+%type <type_node> Dec
+%type <type_node> Args
+%token <type_int> INT
+%token <type_float> FLOAT
+%token <type_id> ID
+%token <type_bool> TYPE
+%token	SEMI COMMA ASSIGNOP RELOP PLUS MINUS STAR DIV AND OR DOT NOT 
 %token	LP RP LB RB LC RC STRUCT RETURN IF ELSE WHILE
 %right	ASSIGNOP
 %left	OR
@@ -15,6 +45,8 @@
 %left	STAR DIV
 %right	NOT
 %left	LP RP LB RB DOT
+%nonassoc LOWER_THEN_ELSE
+%nonassoc ELSE
 %%
 Program	:	ExtDefList
 	;
@@ -22,6 +54,7 @@ ExtDefList	:	ExtDef ExtDefList
 		|	/*empty*/
 		;
 ExtDef	:	Specifier ExtDecList SEMI
+       	|	Specifier error SEMI/*error recovery*/
 	|	Specifier SEMI
 	|	Specifier FunDec CompSt
 	;
@@ -32,6 +65,7 @@ Specifier	:	TYPE
 		|	StructSpecifier
 		;
 StructSpecifier	:	STRUCT OptTag LC DefList RC
+		|	STRUCT OptTag LC error RC/*error recovery*/
 		|	STRUCT Tag
 		;
 OptTag	:	ID
@@ -43,6 +77,7 @@ VarDec	:	ID
 	|	VarDec LB INT RB
 	;
 FunDec	:	ID LP VarList RP
+       	|	ID LP error RP/*error recovery*/
 	|	ID LP RP
 	;
 VarList	:	ParamDec COMMA VarList
@@ -51,6 +86,7 @@ VarList	:	ParamDec COMMA VarList
 ParamDec	:	Specifier VarDec
 		;
 CompSt	:	LC DefList StmtList RC
+       	|	LC DefList error RC/*error recovery*/
 	;
 StmtList	:	Stmt StmtList
 		|	/*empty*/
@@ -59,9 +95,12 @@ Stmt	:	Exp SEMI
      	|	error SEMI/*error recovery*/
 	|	CompSt
 	|	RETURN Exp SEMI
-	|	IF LP Exp RP Stmt
+	|	RETURN error SEMI/*error recovery*/
+	|	IF LP Exp RP Stmt	%prec LOWER_THEN_ELSE
+	|	IF LP error RP Stmt/*error recovery*/
 	|	IF LP Exp RP Stmt ELSE Stmt
 	|	WHILE LP Exp RP Stmt
+	|	WHILE LP error RP Stmt
 	;
 DefList	:	Def DefList
 	|	/*empty*/
@@ -84,7 +123,6 @@ Exp	:	Exp ASSIGNOP Exp
 	|	Exp STAR Exp
 	|	Exp DIV Exp
 	|	LP Exp RP
-	|	LP error RP/*error recovery*/
 	|	MINUS Exp
 	|	NOT Exp
 	|	ID LP Args RP
@@ -93,7 +131,6 @@ Exp	:	Exp ASSIGNOP Exp
 	|	Exp LB Exp RB
 	|	Exp LB error RB/*error recovery*/
 	|	Exp DOT ID
-/*	|	error DOT ID/*error recovery*/
 	|	ID
 	|	INT
 	|	FLOAT
