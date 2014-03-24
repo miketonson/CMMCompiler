@@ -1,6 +1,7 @@
-int main(){
-a[5] = 1.5;
-c = 1;
-b = cos(1,3,4);
-if(a+3)b=3; else v=5;
+struct Complex {
+	float real, image; 
+};
+int main() {
+	struct Complex x;
+	y.image = 3.5; 
 }

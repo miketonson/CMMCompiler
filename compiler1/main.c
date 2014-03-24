@@ -1,5 +1,5 @@
 #include <stdio.h>
-
+#include "syntax.tab.h"
 /* 
  * ===  FUNCTION  ======================================================================
  *         Name:  main
@@ -17,8 +17,9 @@ int main(int argc, char** argv){
 		return 1; 
 	}
 	yyrestart(f);
-	extern FILE* yydebug; 
-	yydebug = 1; 
+	//extern FILE* yydebug; 
+	//yydebug = 1; 
 	yyparse();
+	PrintTree();
 	return 0;
 }

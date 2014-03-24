@@ -16,14 +16,30 @@
  * =====================================================================================
  */
 
+
+typedef enum KIND {Program,ExtDefList,ExtDef,Specifier,ExtDecList,FunDec,CompSt,VarDec,StructSpecifier,OptTag,DefList,Tag,VarList,ParamDec,StmtList,Stmt,Exp,Def,DecList,Dec,Args} KIND;
+typedef enum TERM {SEMIm,COMMAm,ASSIGNOPm,RELOPm,PLUSm,MINUSm,STARm,DIVm,ANDm,ORm,DOTm,NOTm,LPm,RPm,LBm,RBm,LCm,RCm,STRUCTm,RETURNm,IFm,ELSEm,WHILEm} TERM;
+typedef enum MEAN {IDm,INTm,FLOATm,TYPEm} MEAN;
+
 typedef struct expnode
 {
-	int lineno;
-	int exp_num;
-	int node_sum;
-	enum KIND {Program,ExtDefList,ExtDef,Specifier,ExtDecList,FunDec,CompSt,VarDec,StructSpecifier,OptTag,DefList,Tag,VarList,ParamDec,StmtList,Stmt,Exp,Def,DecList,Dec,Args,noExp} kind;
-	enum MEAN {ID,INT,FLOAT,TYPE,noMean} mean;
-	enum TERM {SEMI,COMMA,ASSIGNOP,RELOP,PLUS,MINUS,STAR,DIV,AND,OR,DOT,NOT,LP,RP,LB,RB,LC,RC,STRUCT,RETURN,IF,ELSE,WHILE,noTerm} terminal;
-	struct expnode* son_node[];
+	struct expnode *father_node;
+	int search_num;
+
+	int lineno;//which line the syntax is in
+	int node_type;//type of the node: 1 for non-terminate; 2 for terminate with no meaning; 3 for terminate with meaning
+	int exp_num;//the num of exp on the right
+	int node_sum;//num of son nodes
+
+	KIND kind;//non-terminate
+	TERM term;//terminate with no meaning
+	MEAN mean;//terminate with meaning
+
+	int int_vaule;//meaning of INT
+	int type_vaule;//meaning of TYPE: 0 for INT, others for FLOAT
+	float float_vaule;//mean of FLOAT
+	char *id_vaule;//mean of ID
+
+	struct expnode *son_node[10];
 }expnode;
 

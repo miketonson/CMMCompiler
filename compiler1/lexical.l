@@ -1,5 +1,11 @@
 %{
+#include <stdlib.h>
+#include <string.h>
 #include "syntax.tab.h"
+int yycolumn = 1;
+#define YY_USER_ACTION yylloc.first_line = yylloc.last_line = yylineno;\
+	yylloc.first_column = yycolumn; yylloc.last_column = yycolumn + yyleng - 1;\
+	yycolumn += yyleng;
 %}
 %option yylineno
 type	int|float
@@ -23,7 +29,7 @@ ws	[ \t\n]+
 "||"	{ printf("OR\n");return OR; }
 "."	{ printf("DOT\n");return DOT; }
 "!"	{ printf("NOT\n");return NOT; }
-{type}	{ printf("TYPE\n");return TYPE; }
+{type}	{ printf("TYPE\n"); yylval.type_type = strcmp(yytext, "int"); return TYPE;}
 "("	{ printf("LP\n");return LP; }
 ")"	{ printf("RP\n");return RP; }
 "["	{ printf("LB\n");return LB; }
@@ -35,9 +41,9 @@ ws	[ \t\n]+
 "if"	{ printf("IF\n");return IF; }
 "else"	{ printf("ELSE\n");return ELSE; }
 "while"	{ printf("WHILE\n");return WHILE; }
-{id}	{ printf("ID\n");return ID; }
-{int}	{ printf("INT\n");return INT; }
-{float}	{ printf("FLOAT\n");return FLOAT; }
+{id}	{ printf("ID\n"); yylval.type_id = strdup(yytext); return ID; }
+{int}	{ printf("INT\n"); yylval.type_int = atoi(yytext); return INT; }
+{float}	{ printf("FLOAT\n"); yylval.type_float = strtof(yytext,NULL); return FLOAT; }
 {wrongid}	{ printf("Error type A at line %d: You wirte a wrong ID \'%s'\n", yylineno, yytext); }
 .	{ printf("Error type A at line %d: Mysterious character \'%s\'\n", yylineno, yytext);}
 %%
