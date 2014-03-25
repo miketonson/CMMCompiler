@@ -18,6 +18,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdarg.h>
+#include <string.h>
 #include "tree.h"
 #define MEANNODE expnode *EXP;\
 		EXP = malloc(sizeof(expnode));\
@@ -76,5 +77,34 @@ expnode * IdNode(MEAN mean, int lineno, char* id_vaule)
 {
 	MEANNODE;
 	EXP->id_vaule = id_vaule;
+	return EXP;
+}
+expnode * RelopNode(MEAN mean, int lineno, char* relop_char)
+{
+	MEANNODE;
+	if(strcmp(relop_char,">") == 0)
+	{
+		EXP->relop_vaule = 1;
+	}
+	else if(strcmp(relop_char, "<") == 0)
+	{
+		EXP->relop_vaule = 2;
+	}
+	else if(strcmp(relop_char, ">=") == 0)
+	{
+		EXP->relop_vaule = 3;
+	}
+	else if(strcmp(relop_char, "<=") == 0)
+	{
+		EXP->relop_vaule = 4;
+	}
+	else if(strcmp(relop_char, "==") == 0)
+	{
+		EXP->relop_vaule = 5;
+	}
+	else
+	{
+		EXP->relop_vaule = 6;
+	}
 	return EXP;
 }

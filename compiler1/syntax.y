@@ -1,7 +1,6 @@
 %{
 #include <stdio.h>
 #include "lex.yy.c"
-#include "tree.c"
 expnode *RootNode;
 %}
 %union{
@@ -34,10 +33,10 @@ expnode *RootNode;
 %type <type_node> Args
 %token <type_int> INT
 %token <type_float> FLOAT
-%token <type_id> ID
+%token <type_id> ID RELOP
 %token <type_type> TYPE
-%token	SEMI COMMA ASSIGNOP RELOP PLUS MINUS STAR DIV AND OR DOT NOT 
-%token	LP RP LB RB LC RC STRUCT RETURN IF ELSE WHILE
+%token <type_node> SEMI COMMA ASSIGNOP PLUS MINUS STAR DIV AND OR DOT NOT 
+%token <type_node> LP RP LB RB LC RC STRUCT RETURN IF ELSE WHILE
 %right	ASSIGNOP
 %left	OR
 %left	AND
@@ -56,34 +55,22 @@ Program	:	ExtDefList {	$$ = InsertNode(Program, @$.first_line, 1, 1, $1);
 ExtDefList	:	ExtDef ExtDefList { $$ = InsertNode(ExtDefList, @$.first_line, 1, 2, $1, $2); }
 		|	/*empty*/ { $$ = InsertNode(ExtDefList, @$.first_line, 2, 0); }
 		;
-ExtDef	:	Specifier ExtDecList SEMI {	expnode *SEMIn = TermNode(SEMIm, yylineno);
-       						$$ = InsertNode(ExtDef, @$.first_line, 1, 3, $1, $2, SEMIn);
-						}
+ExtDef	:	Specifier ExtDecList SEMI { $$ = InsertNode(ExtDef, @$.first_line, 1, 3, $1, $2, $3); }
        	|	Specifier error SEMI/*error recovery*/
-	|	Specifier SEMI {expnode *SEMIn = TermNode(SEMIm,yylineno);
-				$$ = InsertNode(ExtDef, @$.first_line, 2, 2, $1, SEMIn);
-				}
+	|	Specifier SEMI { $$ = InsertNode(ExtDef, @$.first_line, 2, 2, $1, $2); }
 	|	Specifier FunDec CompSt { $$ = InsertNode(ExtDef, @$.first_line, 3, 3, $1, $2, $3); }
 	;
 ExtDecList	:	VarDec { $$ = InsertNode(ExtDecList, @$.first_line, 1, 1, $1); }
-		|	VarDec COMMA ExtDecList {expnode *COMMAn = TermNode(COMMAm, yylineno);
-						$$ = InsertNode(ExtDecList, @$.first_line, 2, 3, $1, COMMAn, $3);
-						}
+		|	VarDec COMMA ExtDecList { $$ = InsertNode(ExtDecList, @$.first_line, 2, 3, $1, $2, $3); }
 		;
 Specifier	:	TYPE {	expnode *TYPEn = TypeNode(TYPEm, yylineno, $1);
 	  			$$ = InsertNode(Specifier, @$.first_line, 1, 1, TYPEn);
 				}
 		|	StructSpecifier { $$ = InsertNode(Specifier, @$.first_line, 2, 1, $1); }
 		;
-StructSpecifier	:	STRUCT OptTag LC DefList RC {	expnode *STRUCTn = TermNode(STRUCTm, yylineno);
-							expnode *LCn = TermNode(LCm, yylineno);
-							expnode *RCn = TermNode(RCm, yylineno);
-							$$ = InsertNode(StructSpecifier, @$.first_line, 1, 5, STRUCTn, $2, LCn, $4, RCn);
-							}
+StructSpecifier	:	STRUCT OptTag LC DefList RC { $$ = InsertNode(StructSpecifier, @$.first_line, 1, 5, $1, $2, $3, $4, $5); }
 		|	STRUCT OptTag LC error RC/*error recovery*/
-		|	STRUCT Tag {	expnode *STRUCTn = TermNode(STRUCTm, yylineno);
-					$$ = InsertNode(StructSpecifier, @$.first_line, 2, 2, STRUCTn, $2);
-					}
+		|	STRUCT Tag { $$ = InsertNode(StructSpecifier, @$.first_line, 2, 2, $1, $2); }
 		;
 OptTag	:	ID {	expnode *IDn = IdNode(IDm, yylineno, (char*)$1);
        			$$ = InsertNode(OptTag, @$.first_line, 1, 1, IDn);
@@ -97,140 +84,76 @@ Tag	:	ID {	expnode *IDn = IdNode(IDm, yylineno, (char*)$1);
 VarDec	:	ID {	expnode *IDn = IdNode(IDm, yylineno, (char*)$1);
        			$$ = InsertNode(VarDec, @$.first_line, 1, 1, IDn);
 			}
-	|	VarDec LB INT RB {	expnode *LBn = TermNode(LBm, yylineno);
-					expnode *INTn = IntNode(INTm, yylineno, $3);
-					expnode *RBn = TermNode(RBm, yylineno);
-					$$ = InsertNode(VarDec, @$.first_line, 2, 4, $1, LBn, INTn, RBn);
+	|	VarDec LB INT RB {	expnode *INTn = IntNode(INTm, yylineno, $3);
+					$$ = InsertNode(VarDec, @$.first_line, 2, 4, $1, $2, INTn, $4);
 				}
 	;
 FunDec	:	ID LP VarList RP {	expnode *IDn = IdNode(IDm, yylineno, (char*)$1);
-       					expnode *LPn = TermNode(LPm, yylineno);
-					expnode *RPn = TermNode(RPm, yylineno);
-					$$ = InsertNode(FunDec, @$.first_line, 1, 4, IDn, LPn, $3, RPn);
+					$$ = InsertNode(FunDec, @$.first_line, 1, 4, IDn, $2, $3, $4);
 					}
        	|	ID LP error RP/*error recovery*/
 	|	ID LP RP {	expnode *IDn = IdNode(IDm, yylineno, (char*)$1);
-				expnode *LPn = TermNode(LPm, yylineno);
-				expnode *RPn = TermNode(RPm, yylineno);
-				$$ = InsertNode(FunDec, @$.first_line, 2, 3, IDn, LPn, RPn);
+				$$ = InsertNode(FunDec, @$.first_line, 2, 3, IDn, $2, $3);
 				}
 	;
-VarList	:	ParamDec COMMA VarList {expnode *COMMAn = TermNode(COMMAm, yylineno);
-					$$ = InsertNode(VarList, @$.first_line, 1, 3, $1, COMMAn, $3);
-					}
+VarList	:	ParamDec COMMA VarList { $$ = InsertNode(VarList, @$.first_line, 1, 3, $1, $2, $3); }
 	|	ParamDec { $$ = InsertNode(VarList, @$.first_line, 2, 1, $1); }
 	;
 ParamDec	:	Specifier VarDec { $$ = InsertNode(ParamDec, @$.first_line, 1, 2, $1, $2); }
 		;
-CompSt	:	LC DefList StmtList RC {expnode *LCn = TermNode(LCm, yylineno);
-       					expnode *RCn = TermNode(RCm,yylineno);
-					$$ = InsertNode(CompSt, @$.first_line, 1, 4, LCn, $2, $3, RCn);
-					}
+CompSt	:	LC DefList StmtList RC { $$ = InsertNode(CompSt, @$.first_line, 1, 4, $1, $2, $3, $4); }
        	|	LC DefList error RC/*error recovery*/
 	;
 StmtList	:	Stmt StmtList { $$ = InsertNode(StmtList, @$.first_line, 1, 2, $1, $2); }
 		|	/*empty*/ { $$ = InsertNode(StmtList, @$.first_line, 2, 0); }
 		;
-Stmt	:	Exp SEMI {	expnode *SEMIn = TermNode(SEMIm, yylineno);
-     				$$ = InsertNode(Stmt, @$.first_line, 1, 2, $1, SEMIn);
-				}
+Stmt	:	Exp SEMI { $$ = InsertNode(Stmt, @$.first_line, 1, 2, $1, $2); }
      	|	error SEMI/*error recovery*/
 	|	CompSt { $$ = InsertNode(Stmt, @$.first_line, 2, 1, $1); }
-	|	RETURN Exp SEMI {	expnode *RETURNn = TermNode(RETURNm, yylineno);
-					expnode *SEMIn = TermNode(SEMIm, yylineno);
-					$$ = InsertNode(Stmt, @$.first_line, 3, 3, RETURNn, $2, SEMIn);
-					}
+	|	RETURN Exp SEMI { $$ = InsertNode(Stmt, @$.first_line, 3, 3, $1, $2, $3); }
 	|	RETURN error SEMI/*error recovery*/
-	|	IF LP Exp RP Stmt %prec LOWER_THEN_ELSE {expnode *IFn = TermNode(IFm, yylineno);
-							expnode *LPn = TermNode(LPm, yylineno);
-							expnode *RPn = TermNode(RPm,yylineno);
-							$$ = InsertNode(Stmt, @$.first_line, 4, 5, IFn, LPn, $3, RPn, $5);
-							}
+	|	IF LP Exp RP Stmt %prec LOWER_THEN_ELSE { $$ = InsertNode(Stmt, @$.first_line, 4, 5, $1, $2, $3, $4, $5); }
 	|	IF LP error RP Stmt/*error recovery*/
-	|	IF LP Exp RP Stmt ELSE Stmt {	expnode *IFn = TermNode(IFm, yylineno);
-						expnode *LPn = TermNode(LPm, yylineno);
-						expnode *RPn = TermNode(RPm, yylineno);
-						expnode *ELSEn = TermNode(ELSEm, yylineno);
-						$$ = InsertNode(Stmt, @$.first_line, 5, 7, IFn, LPn, $3, RPn, $5, ELSEn, $7);
-						}
-	|	WHILE LP Exp RP Stmt {	expnode *WHILEn = TermNode(WHILEm, yylineno);
-					expnode *LPn = TermNode(LPm,yylineno);
-					expnode *RPn = TermNode(RPm,yylineno);
-					$$ = InsertNode(Stmt, @$.first_line, 6, 5, WHILEn, LPn, $3, RPn, $5);
-					}
+	|	IF LP Exp RP Stmt ELSE Stmt { $$ = InsertNode(Stmt, @$.first_line, 5, 7, $1, $2, $3, $4, $5, $6, $7); }
+	|	WHILE LP Exp RP Stmt { $$ = InsertNode(Stmt, @$.first_line, 6, 5, $1, $2, $3, $4, $5); }
 	|	WHILE LP error RP Stmt/*error recovery*/
 	;
 DefList	:	Def DefList { $$ = InsertNode(DefList, @$.first_line, 1, 2, $1, $2); }
 	|	/*empty*/ { $$ = InsertNode(DefList, @$.first_line, 2, 0); }
 	;
-Def	:	Specifier DecList SEMI {expnode *SEMIn = TermNode(SEMIm, yylineno);
-    					$$ = InsertNode(Def, @$.first_line, 1, 3, $1, $2, SEMIn);
-					}
+Def	:	Specifier DecList SEMI { $$ = InsertNode(Def, @$.first_line, 1, 3, $1, $2, $3); }
 	|	Specifier error SEMI/*error recovery*/
 	;
 DecList	:	Dec { $$ = InsertNode(DecList, @$.first_line, 1, 1, $1); }
-	|	Dec COMMA DecList {	expnode *COMMAn = TermNode(COMMAm, yylineno);
-					$$ = InsertNode(DecList, @$.first_line, 2, 3, $1, COMMAn, $3);
-					}
+	|	Dec COMMA DecList { $$ = InsertNode(DecList, @$.first_line, 2, 3, $1, $2, $3); }
 	;
 Dec	:	VarDec { $$ = InsertNode(Dec, @$.first_line, 1, 1, $1); }
-	|	VarDec ASSIGNOP Exp {	expnode *ASSIGNOPn = TermNode(ASSIGNOPm, yylineno);
-					$$ = InsertNode(Dec, @$.first_line, 2, 3, $1, ASSIGNOPn, $3);
-					}
+	|	VarDec ASSIGNOP Exp { $$ = InsertNode(Dec, @$.first_line, 2, 3, $1, $2, $3); }
 	;
-Exp	:	Exp ASSIGNOP Exp {	expnode *ASSIGNOPn = TermNode(ASSIGNOPm, yylineno);
-    					$$ = InsertNode(Exp, @$.first_line, 1, 3, $1, ASSIGNOPn, $3);
-					}
-	|	Exp AND Exp {	expnode *ANDn = TermNode(ANDm, yylineno);
-				$$ =InsertNode(Exp, @$.first_line, 2, 3, $1, ANDn, $3);
+Exp	:	Exp ASSIGNOP Exp { $$ = InsertNode(Exp, @$.first_line, 1, 3, $1, $2, $3); }
+	|	Exp AND Exp { $$ =InsertNode(Exp, @$.first_line, 2, 3, $1, $2, $3); }
+	|	Exp OR Exp { $$ = InsertNode(Exp, @$.first_line, 3, 3, $1, $2, $3); }
+	|	Exp RELOP Exp { expnode *RELOPn = RelopNode(RELOPm, yylineno, (char*)$2);
+				$$ = InsertNode(Exp, @$.first_line, 4, 3, $1, RELOPn, $3); 
 				}
-	|	Exp OR Exp {	expnode *ORn = TermNode(ORm, yylineno);
-				$$ = InsertNode(Exp, @$.first_line, 3, 3, $1, ORn, $3);
-				}
-	|	Exp RELOP Exp {	expnode *RELOPn = TermNode(RELOPm, yylineno);
-				$$ = InsertNode(Exp, @$.first_line, 4, 3, $1, RELOPn, $3);
-				}
-	|	Exp PLUS Exp {	expnode *PLUSn = TermNode(PLUSm, yylineno);
-				$$ = InsertNode(Exp, @$.first_line, 5, 3, $1, PLUSn, $3);
-				}
-	|	Exp MINUS Exp {	expnode *MINUSn = TermNode(MINUSm, yylineno);
-				$$ = InsertNode(Exp, @$.first_line, 6, 3, $1, MINUSn, $3);
-				}
-	|	Exp STAR Exp {	expnode *STARn = TermNode(STARm, yylineno);
-				$$ = InsertNode(Exp, @$.first_line, 7, 3, $1, STARn, $3);
-				}
-	|	Exp DIV Exp {	expnode *DIVn = TermNode(DIVm, yylineno);
-				$$ = InsertNode(Exp, @$.first_line, 8, 3, $1, DIVn, $3);
-				}
-	|	LP Exp RP {	expnode *LPn = TermNode(LPm,yylineno);
-				expnode *RPn = TermNode(RPm,yylineno);
-				$$ = InsertNode(Exp, @$.first_line, 9, 3, LPn, $2, RPn );
-				}
-	|	MINUS Exp {	expnode *MINUSn = TermNode(MINUSm, yylineno);
-				$$ = InsertNode(Exp, @$.first_line, 10, 2, MINUSn, $2);
-				}
-	|	NOT Exp {	expnode *NOTn = TermNode(NOTm, yylineno);
-				$$ = InsertNode(Exp, @$.first_line, 11, 2, NOTn, $2);
-				}
+	|	Exp PLUS Exp { $$ = InsertNode(Exp, @$.first_line, 5, 3, $1, $2, $3); }
+	|	Exp MINUS Exp { $$ = InsertNode(Exp, @$.first_line, 6, 3, $1, $2, $3); }
+	|	Exp STAR Exp { $$ = InsertNode(Exp, @$.first_line, 7, 3, $1, $2, $3); }
+	|	Exp DIV Exp { $$ = InsertNode(Exp, @$.first_line, 8, 3, $1, $2, $3); }
+	|	LP Exp RP { $$ = InsertNode(Exp, @$.first_line, 9, 3, $1, $2, $3); }
+	|	MINUS Exp { $$ = InsertNode(Exp, @$.first_line, 10, 2, $1, $2); }
+	|	NOT Exp { $$ = InsertNode(Exp, @$.first_line, 11, 2, $1, $2); }
 	|	ID LP Args RP {	expnode *IDn = IdNode(IDm, yylineno, (char*)$1);
-				expnode *LPn = TermNode(LPm, yylineno);
-				expnode *RPn = TermNode(RPm, yylineno);
-				$$ = InsertNode(Exp, @$.first_line, 12, 4, IDn, LPn, $3, RPn);
+				$$ = InsertNode(Exp, @$.first_line, 12, 4, IDn, $2, $3, $4);
 				}
 	|	ID LP error RP/*error recovery*/ 
 	|	ID LP RP {	expnode *IDn = IdNode(IDm, yylineno, (char*)$1);
-				expnode *LPn = TermNode(LPm, yylineno);
-				expnode *RPn = TermNode(RPm, yylineno);
-				$$ = InsertNode(Exp, @$.first_line, 13, 3, IDn, LPn, RPn);
+				$$ = InsertNode(Exp, @$.first_line, 13, 3, IDn, $2, $3);
 				}
-	|	Exp LB Exp RB {	expnode *LBn = TermNode(LBm, yylineno);
-				expnode *RBn = TermNode(RBm, yylineno);
-				$$ = InsertNode(Exp, @$.first_line, 14, 4, $1, LBn, $3, RBn);
-				}
+	|	Exp LB Exp RB {	$$ = InsertNode(Exp, @$.first_line, 14, 4, $1, $2, $3, $4); }
 	|	Exp LB error RB/*error recovery*/
-	|	Exp DOT ID {	expnode *DOTn = TermNode(DOTm, yylineno);
-				expnode *IDn = IdNode(IDm, yylineno, (char*)$3);
-				$$ = InsertNode(Exp, @$.first_line, 15, 3, $1, DOTn, IDn);
+	|	Exp DOT ID { 	expnode *IDn = IdNode(IDm, yylineno, (char*)$3);
+				$$ = InsertNode(Exp, @$.first_line, 15, 3, $1, $2, IDn);
 				}
 	|	ID {	expnode *IDn = IdNode(IDm, yylineno, (char*)$1);
 			$$ = InsertNode(Exp, @$.first_line, 16, 1, IDn);
@@ -242,9 +165,7 @@ Exp	:	Exp ASSIGNOP Exp {	expnode *ASSIGNOPn = TermNode(ASSIGNOPm, yylineno);
 			$$ = InsertNode(Exp, @$.first_line, 18, 1, FLOATn);
 			}
 	;
-Args	:	Exp COMMA Args {expnode *COMMAn = TermNode(COMMAm, yylineno);
-     				$$ = InsertNode(Args, @$.first_line, 1, 3, $1, COMMAn, $3);
-				}
+Args	:	Exp COMMA Args { $$ = InsertNode(Args, @$.first_line, 1, 3, $1, $2, $3); }
 	|	Exp { $$ = InsertNode(Args, @$.first_line, 2, 1, $1); }
 	;
 %%
@@ -392,11 +313,6 @@ void PrintTerm(int t_num, TERM term)
 			printf("ASSIGNOP\n");
 			break;
 		}
-		case RELOPm:
-		{
-			printf("RELOP\n");
-			break;
-		}
 		case PLUSm:
 		{
 			printf("PLUS\n");
@@ -536,11 +452,59 @@ void PrintMean(int t_num, expnode *mean_node)
 				break;
 			}
 		}
+		case RELOPm:
+		{
+			printf("RELOP: ");
+			switch(mean_node->relop_vaule)
+			{
+				case 1:
+				{
+					printf(">\n");
+					break;
+				}
+				case 2:
+				{
+					printf("<\n");
+					break;
+				}
+				case 3:
+				{
+					printf(">=\n");
+					break;
+				}
+				case 4:
+				{
+					printf("<=\n");
+					break;
+				}
+				case 5:
+				{
+					printf("==\n");
+					break;
+				}
+				case 6:
+				{
+					printf("!=\n");
+					break;
+				}
+				default:
+				{
+					printf("relop error\n");
+					break;
+				}
+			}
+			break;
+		}
+		default:
+		{
+			printf("error print at type 3\n");
+		}
 	}
 }
 
 void PrintTree()
 {
+	printf("print start\n");
 	expnode *NODE = RootNode;
 	int tab_num = 0;
 	if(NODE->kind == Program)
@@ -559,7 +523,7 @@ void PrintTree()
 	{
 		if(NODE->kind == Program && NODE->node_type == 1)
 		{
-			printf("end\n");
+			printf("print end\n");
 			break;
 		}
 		switch(NODE->node_type)
@@ -573,7 +537,6 @@ void PrintTree()
 				if(NODE->search_num < NODE->node_sum)
 				{
 					int now_num = NODE->search_num;
-					//printf("num: %d\n", now_num);
 					NODE->search_num++;
 					tab_num++;
 					if(NODE->son_node[now_num]->node_sum > 0 || NODE->son_node[now_num]->node_type != 1)
@@ -584,11 +547,9 @@ void PrintTree()
 					{
 						tab_num--;
 					}
-					//printf("type: %d\n", NODE->node_type);
 				}
 				else
 				{
-					//printf("bbb\n");
 					NODE = NODE->father_node;
 					tab_num--;
 				}
@@ -603,7 +564,6 @@ void PrintTree()
 			}
 			case 3:
 			{
-				//printf("aaa\n");
 				PrintMean(tab_num, NODE);
 				NODE = NODE->father_node;
 				tab_num--;
@@ -616,6 +576,4 @@ void PrintTree()
 			}
 		}
 	}
-	//printf("ccc %d\n", NODE->node_type);
-	//PrintMean(tab_num, NODE);
 }

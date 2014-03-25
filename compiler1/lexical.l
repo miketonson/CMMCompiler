@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "syntax.tab.h"
+#include "tree.c"
 int yycolumn = 1;
 #define YY_USER_ACTION yylloc.first_line = yylloc.last_line = yylineno;\
 	yylloc.first_column = yycolumn; yylloc.last_column = yycolumn + yyleng - 1;\
@@ -17,30 +18,30 @@ wrongid	[0-9][_A-Za-z0-9]*
 ws	[ \t\n]+
 %%
 {ws}	{ /*do nothing*/ }
-";"	{ printf("SEMI\n");return SEMI; }
-","	{ printf("COMMA\n");return COMMA; }
-"="	{ printf("ASSIGNOP\n");return ASSIGNOP; }
-{relop}	{ printf("RELOP\n");return RELOP; }
-"+"	{ printf("PLUS\n");return PLUS; }
-"-"	{ printf("MINUS\n");return MINUS; }
-"*"	{ printf("STAR\n");return STAR; }
-"/"	{ printf("DIV\n");return DIV; }
-"&&"	{ printf("AND\n");return AND; }
-"||"	{ printf("OR\n");return OR; }
-"."	{ printf("DOT\n");return DOT; }
-"!"	{ printf("NOT\n");return NOT; }
+";"	{ printf("SEMI\n"); yylval.type_node = TermNode(SEMIm,yylineno); return SEMI; }
+","	{ printf("COMMA\n"); yylval.type_node = TermNode(COMMAm,yylineno); return COMMA; }
+"="	{ printf("ASSIGNOP\n"); yylval.type_node = TermNode(ASSIGNOPm,yylineno); return ASSIGNOP; }
+{relop}	{ printf("RELOP\n"); yylval.type_id = strdup(yytext); return RELOP; }
+"+"	{ printf("PLUS\n"); yylval.type_node = TermNode(PLUSm, yylineno); return PLUS; }
+"-"	{ printf("MINUS\n"); yylval.type_node = TermNode(MINUSm,yylineno); return MINUS; }
+"*"	{ printf("STAR\n"); yylval.type_node = TermNode(STARm, yylineno); return STAR; }
+"/"	{ printf("DIV\n"); yylval.type_node = TermNode(DIVm,yylineno); return DIV; }
+"&&"	{ printf("AND\n"); yylval.type_node = TermNode(ANDm,yylineno); return AND; }
+"||"	{ printf("OR\n"); yylval.type_node = TermNode(ORm, yylineno); return OR; }
+"."	{ printf("DOT\n"); yylval.type_node = TermNode(DOTm,yylineno); return DOT; }
+"!"	{ printf("NOT\n"); yylval.type_node = TermNode(NOTm, yylineno); return NOT; }
 {type}	{ printf("TYPE\n"); yylval.type_type = strcmp(yytext, "int"); return TYPE;}
-"("	{ printf("LP\n");return LP; }
-")"	{ printf("RP\n");return RP; }
-"["	{ printf("LB\n");return LB; }
-"]"	{ printf("RB\n");return RB; }
-"{"	{ printf("LC\n");return LC; }
-"}"	{ printf("RC\n");return RC; }
-"struct"	{ printf("STRUCT\n");return STRUCT; }
-"return"	{ printf("RETURN\n");return RETURN; }
-"if"	{ printf("IF\n");return IF; }
-"else"	{ printf("ELSE\n");return ELSE; }
-"while"	{ printf("WHILE\n");return WHILE; }
+"("	{ printf("LP\n"); yylval.type_node = TermNode(LPm, yylineno); return LP; }
+")"	{ printf("RP\n"); yylval.type_node = TermNode(RPm, yylineno); return RP; }
+"["	{ printf("LB\n"); yylval.type_node = TermNode(LBm, yylineno); return LB; }
+"]"	{ printf("RB\n"); yylval.type_node = TermNode(RBm, yylineno); return RB; }
+"{"	{ printf("LC\n"); yylval.type_node = TermNode(LCm, yylineno); return LC; }
+"}"	{ printf("RC\n"); yylval.type_node = TermNode(RCm, yylineno); return RC; }
+"struct"	{ printf("STRUCT\n"); yylval.type_node = TermNode(STRUCTm, yylineno); return STRUCT; }
+"return"	{ printf("RETURN\n"); yylval.type_node = TermNode(RETURNm, yylineno); return RETURN; }
+"if"	{ printf("IF\n"); yylval.type_node = TermNode(IFm, yylineno); return IF; }
+"else"	{ printf("ELSE\n"); yylval.type_node = TermNode(ELSEm, yylineno); return ELSE; }
+"while"	{ printf("WHILE\n"); yylval.type_node = TermNode(WHILEm, yylineno); return WHILE; }
 {id}	{ printf("ID\n"); yylval.type_id = strdup(yytext); return ID; }
 {int}	{ printf("INT\n"); yylval.type_int = atoi(yytext); return INT; }
 {float}	{ printf("FLOAT\n"); yylval.type_float = strtof(yytext,NULL); return FLOAT; }

@@ -1,7 +1,14 @@
-struct Complex {
-	float real, image; 
-};
-int main() {
-	struct Complex x;
-	y.image = 3.5; 
+int tang(int a, float asd)
+{
+	int c = 4;
+	float d = 12.35;
+	if(a == 3)
+	{
+		c = c - a;
+	}
+	else
+	{
+		d = d -4;
+	}
+	return c;
 }

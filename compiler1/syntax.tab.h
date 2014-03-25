@@ -40,11 +40,11 @@
      INT = 258,
      FLOAT = 259,
      ID = 260,
-     TYPE = 261,
-     SEMI = 262,
-     COMMA = 263,
-     ASSIGNOP = 264,
-     RELOP = 265,
+     RELOP = 261,
+     TYPE = 262,
+     SEMI = 263,
+     COMMA = 264,
+     ASSIGNOP = 265,
      PLUS = 266,
      MINUS = 267,
      STAR = 268,
@@ -75,7 +75,7 @@ typedef union YYSTYPE
 {
 
 /* Line 2068 of yacc.c  */
-#line 7 "syntax.y"
+#line 6 "syntax.y"
 
 	int type_int;
 	float type_float;

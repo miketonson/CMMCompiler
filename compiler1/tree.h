@@ -18,8 +18,8 @@
 
 
 typedef enum KIND {Program,ExtDefList,ExtDef,Specifier,ExtDecList,FunDec,CompSt,VarDec,StructSpecifier,OptTag,DefList,Tag,VarList,ParamDec,StmtList,Stmt,Exp,Def,DecList,Dec,Args} KIND;
-typedef enum TERM {SEMIm,COMMAm,ASSIGNOPm,RELOPm,PLUSm,MINUSm,STARm,DIVm,ANDm,ORm,DOTm,NOTm,LPm,RPm,LBm,RBm,LCm,RCm,STRUCTm,RETURNm,IFm,ELSEm,WHILEm} TERM;
-typedef enum MEAN {IDm,INTm,FLOATm,TYPEm} MEAN;
+typedef enum TERM {SEMIm,COMMAm,ASSIGNOPm,PLUSm,MINUSm,STARm,DIVm,ANDm,ORm,DOTm,NOTm,LPm,RPm,LBm,RBm,LCm,RCm,STRUCTm,RETURNm,IFm,ELSEm,WHILEm} TERM;
+typedef enum MEAN {IDm,INTm,FLOATm,TYPEm,RELOPm} MEAN;
 
 typedef struct expnode
 {
@@ -39,6 +39,7 @@ typedef struct expnode
 	int type_vaule;//meaning of TYPE: 0 for INT, others for FLOAT
 	float float_vaule;//mean of FLOAT
 	char *id_vaule;//mean of ID
+	int relop_vaule;//meaning of RELOP: 1 for >, 2 for <, 3 for >=, 4 for <=, 5 for ==, 6 for !=
 
 	struct expnode *son_node[10];
 }expnode;
