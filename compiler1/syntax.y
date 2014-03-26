@@ -3,6 +3,7 @@
 #include "lex.yy.c"
 expnode *RootNode;
 %}
+%locations
 %union{
 	int type_int;
 	float type_float;
@@ -47,6 +48,8 @@ expnode *RootNode;
 %left	LP RP LB RB DOT
 %nonassoc LOWER_THEN_ELSE
 %nonassoc ELSE
+%nonassoc LOWER_THEN_ERROR
+%nonassoc error
 %%
 Program	:	ExtDefList {	$$ = InsertNode(Program, @$.first_line, 1, 1, $1);
 				RootNode = $$;
@@ -56,9 +59,9 @@ ExtDefList	:	ExtDef ExtDefList { $$ = InsertNode(ExtDefList, @$.first_line, 1, 2
 		|	/*empty*/ { $$ = InsertNode(ExtDefList, @$.first_line, 2, 0); }
 		;
 ExtDef	:	Specifier ExtDecList SEMI { $$ = InsertNode(ExtDef, @$.first_line, 1, 3, $1, $2, $3); }
-       	|	Specifier error SEMI/*error recovery*/
 	|	Specifier SEMI { $$ = InsertNode(ExtDef, @$.first_line, 2, 2, $1, $2); }
 	|	Specifier FunDec CompSt { $$ = InsertNode(ExtDef, @$.first_line, 3, 3, $1, $2, $3); }
+       	|	error SEMI/*error recovery*/ { $$ = InsertNode(ExtDef, yylineno, -1, 0); }
 	;
 ExtDecList	:	VarDec { $$ = InsertNode(ExtDecList, @$.first_line, 1, 1, $1); }
 		|	VarDec COMMA ExtDecList { $$ = InsertNode(ExtDecList, @$.first_line, 2, 3, $1, $2, $3); }
@@ -69,7 +72,6 @@ Specifier	:	TYPE {	expnode *TYPEn = TypeNode(TYPEm, yylineno, $1);
 		|	StructSpecifier { $$ = InsertNode(Specifier, @$.first_line, 2, 1, $1); }
 		;
 StructSpecifier	:	STRUCT OptTag LC DefList RC { $$ = InsertNode(StructSpecifier, @$.first_line, 1, 5, $1, $2, $3, $4, $5); }
-		|	STRUCT OptTag LC error RC/*error recovery*/
 		|	STRUCT Tag { $$ = InsertNode(StructSpecifier, @$.first_line, 2, 2, $1, $2); }
 		;
 OptTag	:	ID {	expnode *IDn = IdNode(IDm, yylineno, (char*)$1);
@@ -91,10 +93,10 @@ VarDec	:	ID {	expnode *IDn = IdNode(IDm, yylineno, (char*)$1);
 FunDec	:	ID LP VarList RP {	expnode *IDn = IdNode(IDm, yylineno, (char*)$1);
 					$$ = InsertNode(FunDec, @$.first_line, 1, 4, IDn, $2, $3, $4);
 					}
-       	|	ID LP error RP/*error recovery*/
 	|	ID LP RP {	expnode *IDn = IdNode(IDm, yylineno, (char*)$1);
 				$$ = InsertNode(FunDec, @$.first_line, 2, 3, IDn, $2, $3);
 				}
+       	|	error RP/*error recovery*/ { $$ = InsertNode(FunDec, yylineno, -1, 0); }
 	;
 VarList	:	ParamDec COMMA VarList { $$ = InsertNode(VarList, @$.first_line, 1, 3, $1, $2, $3); }
 	|	ParamDec { $$ = InsertNode(VarList, @$.first_line, 2, 1, $1); }
@@ -102,27 +104,24 @@ VarList	:	ParamDec COMMA VarList { $$ = InsertNode(VarList, @$.first_line, 1, 3,
 ParamDec	:	Specifier VarDec { $$ = InsertNode(ParamDec, @$.first_line, 1, 2, $1, $2); }
 		;
 CompSt	:	LC DefList StmtList RC { $$ = InsertNode(CompSt, @$.first_line, 1, 4, $1, $2, $3, $4); }
-       	|	LC DefList error RC/*error recovery*/
+       	|	error RC/*error recovery*/{ $$ = InsertNode(CompSt, yylineno, -1, 0); }
 	;
 StmtList	:	Stmt StmtList { $$ = InsertNode(StmtList, @$.first_line, 1, 2, $1, $2); }
 		|	/*empty*/ { $$ = InsertNode(StmtList, @$.first_line, 2, 0); }
 		;
 Stmt	:	Exp SEMI { $$ = InsertNode(Stmt, @$.first_line, 1, 2, $1, $2); }
-     	|	error SEMI/*error recovery*/
 	|	CompSt { $$ = InsertNode(Stmt, @$.first_line, 2, 1, $1); }
 	|	RETURN Exp SEMI { $$ = InsertNode(Stmt, @$.first_line, 3, 3, $1, $2, $3); }
-	|	RETURN error SEMI/*error recovery*/
 	|	IF LP Exp RP Stmt %prec LOWER_THEN_ELSE { $$ = InsertNode(Stmt, @$.first_line, 4, 5, $1, $2, $3, $4, $5); }
-	|	IF LP error RP Stmt/*error recovery*/
 	|	IF LP Exp RP Stmt ELSE Stmt { $$ = InsertNode(Stmt, @$.first_line, 5, 7, $1, $2, $3, $4, $5, $6, $7); }
 	|	WHILE LP Exp RP Stmt { $$ = InsertNode(Stmt, @$.first_line, 6, 5, $1, $2, $3, $4, $5); }
-	|	WHILE LP error RP Stmt/*error recovery*/
+     	|	error SEMI/*error recovery*/{$$ = InsertNode(Stmt, yylineno, -1, 0);}
 	;
 DefList	:	Def DefList { $$ = InsertNode(DefList, @$.first_line, 1, 2, $1, $2); }
-	|	/*empty*/ { $$ = InsertNode(DefList, @$.first_line, 2, 0); }
+	|	/*empty*/ %prec LOWER_THEN_ERROR { $$ = InsertNode(DefList, @$.first_line, 2, 0); }
 	;
 Def	:	Specifier DecList SEMI { $$ = InsertNode(Def, @$.first_line, 1, 3, $1, $2, $3); }
-	|	Specifier error SEMI/*error recovery*/
+	|	error SEMI/*error recovery*/{ $$ = InsertNode(Def, yylineno, -1, 0); }
 	;
 DecList	:	Dec { $$ = InsertNode(DecList, @$.first_line, 1, 1, $1); }
 	|	Dec COMMA DecList { $$ = InsertNode(DecList, @$.first_line, 2, 3, $1, $2, $3); }
@@ -146,12 +145,10 @@ Exp	:	Exp ASSIGNOP Exp { $$ = InsertNode(Exp, @$.first_line, 1, 3, $1, $2, $3); 
 	|	ID LP Args RP {	expnode *IDn = IdNode(IDm, yylineno, (char*)$1);
 				$$ = InsertNode(Exp, @$.first_line, 12, 4, IDn, $2, $3, $4);
 				}
-	|	ID LP error RP/*error recovery*/ 
 	|	ID LP RP {	expnode *IDn = IdNode(IDm, yylineno, (char*)$1);
 				$$ = InsertNode(Exp, @$.first_line, 13, 3, IDn, $2, $3);
 				}
 	|	Exp LB Exp RB {	$$ = InsertNode(Exp, @$.first_line, 14, 4, $1, $2, $3, $4); }
-	|	Exp LB error RB/*error recovery*/
 	|	Exp DOT ID { 	expnode *IDn = IdNode(IDm, yylineno, (char*)$3);
 				$$ = InsertNode(Exp, @$.first_line, 15, 3, $1, $2, IDn);
 				}
@@ -164,6 +161,8 @@ Exp	:	Exp ASSIGNOP Exp { $$ = InsertNode(Exp, @$.first_line, 1, 3, $1, $2, $3); 
 	|	FLOAT {	expnode *FLOATn = FloatNode(FLOATm, yylineno, $1);
 			$$ = InsertNode(Exp, @$.first_line, 18, 1, FLOATn);
 			}
+	|	LP error RP/*error recovery*/ { $$  = InsertNode(Exp, yylineno, -1, 0); }
+	|	Exp LB error RB/*error recovery*/{ $$ = InsertNode(Exp, yylineno, -1, 0); }
 	;
 Args	:	Exp COMMA Args { $$ = InsertNode(Args, @$.first_line, 1, 3, $1, $2, $3); }
 	|	Exp { $$ = InsertNode(Args, @$.first_line, 2, 1, $1); }
@@ -172,6 +171,7 @@ Args	:	Exp COMMA Args { $$ = InsertNode(Args, @$.first_line, 1, 3, $1, $2, $3); 
 yyerror(char* msg)
 {
     fprintf(stderr,"Error type B at line %d: %s\n", yylineno, msg);
+    have_wrong = 1;
 }
 
 void PrintKind(int t_num, KIND kind, int lineno)
@@ -504,7 +504,11 @@ void PrintMean(int t_num, expnode *mean_node)
 
 void PrintTree()
 {
-	printf("print start\n");
+	if(have_wrong == 1)
+	{
+		return;
+	}
+//	printf("print start\n");
 	expnode *NODE = RootNode;
 	int tab_num = 0;
 	if(NODE->kind == Program)
@@ -523,7 +527,7 @@ void PrintTree()
 	{
 		if(NODE->kind == Program && NODE->node_type == 1)
 		{
-			printf("print end\n");
+//			printf("print end\n");
 			break;
 		}
 		switch(NODE->node_type)

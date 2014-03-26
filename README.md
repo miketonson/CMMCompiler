@@ -4,7 +4,7 @@ CMM compiler
 
 ##Project progress
 - [x] Lexical Analysis
-- [ ] Syntax Analysis (half complete)
+- [x] Syntax Analysis (testing...)
 - [ ] Semantic Analysis
 - [ ] Intermediate-code Generator
 - [ ] Machine-code Generator

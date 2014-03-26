@@ -16,7 +16,7 @@
  * =====================================================================================
  */
 
-
+int have_wrong = 0;
 typedef enum KIND {Program,ExtDefList,ExtDef,Specifier,ExtDecList,FunDec,CompSt,VarDec,StructSpecifier,OptTag,DefList,Tag,VarList,ParamDec,StmtList,Stmt,Exp,Def,DecList,Dec,Args} KIND;
 typedef enum TERM {SEMIm,COMMAm,ASSIGNOPm,PLUSm,MINUSm,STARm,DIVm,ANDm,ORm,DOTm,NOTm,LPm,RPm,LBm,RBm,LCm,RCm,STRUCTm,RETURNm,IFm,ELSEm,WHILEm} TERM;
 typedef enum MEAN {IDm,INTm,FLOATm,TYPEm,RELOPm} MEAN;

@@ -1,14 +1,22 @@
-int tang(int a, float asd)
-{
-	int c = 4;
-	float d = 12.35;
-	if(a == 3)
-	{
-		c = c - a;
-	}
-	else
-	{
-		d = d -4;
-	}
-	return c;
+int main() {
+	//This will be a final test file
+	/*First test the DefList and Numbers*/ int a = 6;
+	int b = 10
+		int c = 7;
+	float asd = 12E-12;
+	int 123asd = 123;
+	int v = 0123;
+	z = 10;
+	int h = 0x1G;
+	int k = 12
+		int a = 9;
+}
+int add{
+	int a = 10;
+	int c = 1
+		int d= 12;
+}
+int df{
+	int a = ;
+	int b=1;
 }
