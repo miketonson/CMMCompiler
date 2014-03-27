@@ -30,9 +30,10 @@ expnode * InsertNode(KIND kind,int lineno, int exp_num, int node_num, ...)
 {
 	va_list ap;
 	expnode *EXP;
-	EXP = malloc(sizeof(expnode)+node_num*sizeof(expnode));
+	EXP = malloc(sizeof(expnode));
 	va_start (ap,node_num);
-	for(int i=0; i<node_num; i++)
+	int i;
+	for(i=0; i<node_num; i++)
 	{
 		EXP->son_node[i] = va_arg(ap,expnode *);
 		EXP->son_node[i]->father_node = EXP;

@@ -176,7 +176,8 @@ yyerror(char* msg)
 
 void PrintKind(int t_num, KIND kind, int lineno)
 {
-	for(int i=0; i<t_num; i++)
+	int i;
+	for(i=0; i<t_num; i++)
 	{
 		printf("  ");
 	}
@@ -292,7 +293,8 @@ void PrintKind(int t_num, KIND kind, int lineno)
 
 void PrintTerm(int t_num, TERM term)
 {
-	for(int i=0; i<t_num; i++)
+	int i;
+	for(i=0; i<t_num; i++)
 	{
 		printf("  ");
 	}
@@ -418,7 +420,8 @@ void PrintTerm(int t_num, TERM term)
 
 void PrintMean(int t_num, expnode *mean_node)
 {
-	for(int i=0; i<t_num; i++)
+	int i;
+	for(i=0; i<t_num; i++)
 	{
 		printf("  ");
 	}

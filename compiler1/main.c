@@ -1,5 +1,5 @@
 #include <stdio.h>
-#include "syntax.tab.h"
+#include "syntax.tab.c"
 /* 
  * ===  FUNCTION  ======================================================================
  *         Name:  main

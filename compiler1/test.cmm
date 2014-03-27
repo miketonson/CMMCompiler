@@ -1,22 +1,45 @@
-int main() {
-	//This will be a final test file
-	/*First test the DefList and Numbers*/ int a = 6;
-	int b = 10
-		int c = 7;
-	float asd = 12E-12;
-	int 123asd = 123;
-	int v = 0123;
-	z = 10;
-	int h = 0x1G;
-	int k = 12
-		int a = 9;
-}
-int add{
-	int a = 10;
-	int c = 1
-		int d= 12;
-}
-int df{
-	int a = ;
-	int b=1;
+//This will be a final test program for syntax parser
+struct test
+{
+	int a;
+	float b;
+	int asd = 12;
+	int fgh = 012;
+	int ghj = 0X12;
+	float qwe = 1.234;
+	float rte = .23E-4;
+	struct test test1;
+}test;
+/*Upper program test struct, and define list in struct
+  there are int octal hex float struct
+  next will test function */
+
+int main(int a, float b)
+{
+	int a;
+	int b;
+	float c;
+	int a[5][6];
+	struct test test2;
+	float f,g,h = 1.2e2;
+	a = a+b*a;
+	c = a*c-b;
+	main(a,b);
+	a[1][3] = 5/f;
+	if(a>1)
+	{
+		a = 1/a;
+	}
+	if(b!=21)
+	{
+		b = (a+b)*c;
+	}
+	else
+	{
+		b = a*(c-b);
+	}
+	while(c==6)
+	{
+		d = 6;
+	}
 }

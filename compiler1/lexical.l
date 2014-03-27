@@ -34,7 +34,7 @@ wrongC	("/*"(.|\n)*"/*"(.|\n)*"*/"(.|\n)*"*/")|("/*"[^("*/")]*)|([^("/*")]*"*/")
 ";"	{/* printf("SEMI\n");*/ yylval.type_node = TermNode(SEMIm,yylineno); return SEMI; }
 ","	{/* printf("COMMA\n");*/ yylval.type_node = TermNode(COMMAm,yylineno); return COMMA; }
 "="	{/* printf("ASSIGNOP\n");*/ yylval.type_node = TermNode(ASSIGNOPm,yylineno); return ASSIGNOP; }
-{relop}	{/* printf("RELOP\n");*/ yylval.type_id = strdup(yytext); return RELOP; }
+{relop}	{/* printf("RELOP\n");*/ yylval.type_id = malloc(strlen(yytext)+1); strcpy(yylval.type_id, yytext); return RELOP; }
 "+"	{/* printf("PLUS\n");*/ yylval.type_node = TermNode(PLUSm, yylineno); return PLUS; }
 "-"	{/* printf("MINUS\n");*/ yylval.type_node = TermNode(MINUSm,yylineno); return MINUS; }
 "*"	{/* printf("STAR\n");*/ yylval.type_node = TermNode(STARm, yylineno); return STAR; }
@@ -55,7 +55,7 @@ wrongC	("/*"(.|\n)*"/*"(.|\n)*"*/"(.|\n)*"*/")|("/*"[^("*/")]*)|([^("/*")]*"*/")
 "if"	{/* printf("IF\n");*/ yylval.type_node = TermNode(IFm, yylineno); return IF; }
 "else"	{/* printf("ELSE\n");*/ yylval.type_node = TermNode(ELSEm, yylineno); return ELSE; }
 "while"	{/* printf("WHILE\n");*/ yylval.type_node = TermNode(WHILEm, yylineno); return WHILE; }
-{id}	{/* printf("ID\n");*/ yylval.type_id = strdup(yytext); return ID; }
+{id}	{/* printf("ID\n");*/ yylval.type_id = malloc(strlen(yytext)+1); strcpy(yylval.type_id, yytext); return ID; }
 {int}	{/* printf("INT\n");*/ yylval.type_int = atoi(yytext); return INT; }
 {float}	{/* printf("FLOAT\n");*/ yylval.type_float = strtof(yytext,NULL); return FLOAT; }
 {hex}	{/* printf("HEX\n");*/ yylval.type_int = (int)strtol(yytext,NULL,16); return INT; }

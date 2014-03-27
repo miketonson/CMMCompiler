@@ -1020,7 +1020,7 @@ YY_RULE_SETUP
 case 9:
 YY_RULE_SETUP
 #line 37 "lexical.l"
-{/* printf("RELOP\n");*/ yylval.type_id = strdup(yytext); return RELOP; }
+{/* printf("RELOP\n");*/ yylval.type_id = malloc(strlen(yytext)+1); strcpy(yylval.type_id, yytext); return RELOP; }
 	YY_BREAK
 case 10:
 YY_RULE_SETUP
@@ -1125,7 +1125,7 @@ YY_RULE_SETUP
 case 30:
 YY_RULE_SETUP
 #line 58 "lexical.l"
-{/* printf("ID\n");*/ yylval.type_id = strdup(yytext); return ID; }
+{/* printf("ID\n");*/ yylval.type_id = malloc(strlen(yytext)+1); strcpy(yylval.type_id, yytext); return ID; }
 	YY_BREAK
 case 31:
 YY_RULE_SETUP
