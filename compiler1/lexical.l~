@@ -11,8 +11,8 @@ int yycolumn = 1;
 %option yylineno
 octal	0[1-7]+[0-7]*
 wrongO	0(0+[0-9]*|[0-9]*[89]+[0-9]*)
-hex	0[xX]([0-9A-Fa-f]*)
-wrongH	0[xX]([0-9A-Za-z]*[G-Zg-z]+[0-9A-Za-z]*)
+hex	0[xX](0|[1-9A-Fa-f]+[0-9A-Fa-f]*)
+wrongH	0x(0+[0-9A-Za-z]+|[0-9A-Za-z]*[G-Zg-z]+[0-9A-Za-z]*)
 type	int|float
 relop	>|<|>=|<=|==|!=
 int	0|([1-9][0-9]*)
@@ -26,8 +26,8 @@ com_1	"//".*\n
 com_2	"/*"(.|\n)*"*/"
 wrongC	("/*"(.|\n)*"/*"(.|\n)*"*/"(.|\n)*"*/")|("/*"[^("*/")]*)|([^("/*")]*"*/")
 %%
-{com_2}	{ printf("COM_2, %d\n", yylineno); }
 {wrongC}	{printf("Error type A at line %d: Illegal comments usage\n", yylineno); have_wrong = 1;}
+{com_2}	{ printf("COM_2\n"); }
 {com_1}	{/* printf("COM_1\n");*/ }
 \n	{ yycolumn = 1; }
 {ws}	{ /*do nothing*/ }

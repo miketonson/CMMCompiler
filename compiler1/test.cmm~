@@ -5,5 +5,4 @@ if(arg == 1)
 {
 a2++;
 }
-return;
- }
+return ; }
