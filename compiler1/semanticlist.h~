@@ -135,7 +135,7 @@ int addVarTable(point *varPoint);
 // delete a layer from the layer stack and hash table
 void pullLayerStack();
 
-// find point in hash table, type 0 for var, 1 for func
+// find point in hash table, type 0 for fun_dec, 1 for fun_def, 2 for var_def, 3 for struct_dec
 point * findPoint(char *name, int type, int layer);
 
 #endif

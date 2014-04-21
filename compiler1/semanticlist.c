@@ -20,8 +20,6 @@
 #include <string.h>
 #include "semanticlist.h"
 
-int staLayer = 0;// use to ensure into a layer
-
 // hash function
 unsigned int hash_pjw(char *name)
 {
@@ -66,7 +64,7 @@ void addPointLayer(point *addPoint)
 	}
 	point *tempPoint;
 	tempPoint = nowLayer->layerPoint;
-	while(tempPoint->p.var_defPoint.next_varPoint != NULL || tempPoint->p.struct_decPoint.next_varPoint != NULL)
+	while((tempPoint->point_type == var_def && tempPoint->p.var_defPoint.next_varPoint != NULL) || (tempPoint->point_type == struct_dec && tempPoint->p.struct_decPoint.next_varPoint != NULL))
 	{
 		if(tempPoint->point_type == var_def)
 		{
@@ -153,15 +151,17 @@ int addFuncTable(point *funcPoint)
 				if((nextPoint->point_type == func_def && strcmp(nextPoint->p.func_defPoint->name, funcPoint->p.func_decPoint->name) == 0) || (nextPoint->point_type == func_dec && strcmp(nextPoint->p.func_decPoint->name, funcPoint->p.func_decPoint->name) == 0))
 				{
 					switch(isSameFunc(nextPoint, funcPoint))
-					case 0:
 					{
-						break;
+						case 0:
+							{
+								break;
+							}
+						case 1:
+							{
+								return 2;// func def dec dec not same
+							}
 					}
-					case 1:
-					{
-						return 2;// func def dec dec not same
-					}
-				}
+				}	
 				break;
 			}
 		}
@@ -334,27 +334,68 @@ int addVarTable(point *varPoint)
 	nextPoint = hashTable[value];
 	while(nextPoint != NULL)
 	{
-		if(nextPoint->point_type == varPoint->point_type)
+		switch(nextPoint->point_type)
 		{
-			if(nextPoint->point_type == var_def)
-			{
-				if(strcmp(nextPoint->p.var_defPoint.var_defP->name, varPoint->p.var_defPoint.var_defP->name) == 0 && nextPoint->p.var_defPoint.layer == varPoint->p.var_defPoint.layer)
+			case var_def:
 				{
-					return 1; // var multi def
+					switch(varPoint->point_type)
+					{
+						case var_def:
+							{
+								if(strcmp(nextPoint->p.var_defPoint.var_defP->name, varPoint->p.var_defPoint.var_defP->name) == 0)
+								{
+									return 1; // def and def multi
+								}
+								break;
+							}
+						case struct_dec:
+							{
+								if(strcmp(nextPoint->p.var_defPoint.var_defP->name, varPoint->p.struct_decPoint.struct_decP->u.stru.struct_name) == 0)
+								{
+									return 2; // struct and def multi
+								}
+								break;
+							}
+						default:
+							{
+								return -1;
+								break;
+							}
+					}
+					break;
 				}
-			}
-			else if(nextPoint->point_type == struct_dec)
-			{
-				if(strcmp(nextPoint->p.struct_decPoint.struct_decP->u.stru.struct_name, varPoint->p.struct_decPoint.struct_decP->u.stru.sturct_name) == 0 && nextPoint->p.struct_decPoint.layer == varPoint->p.struct_decPoint.layer)
+			case struct_dec:
 				{
-					return 2; // struct multi def 
+					switch(varPoint->point_type)
+					{
+						case var_def:
+							{
+								if(strcmp(nextPoint->p.struct_decPoint.struct_decP->u.stru.struct_name, varPoint->p.var_defPoint.var_defP->name) == 0)
+								{
+									return 1; // def and struct multi
+								}
+								break;
+							}
+						case struct_dec:
+							{
+								if(strcmp(nextPoint->p.struct_decPoint.struct_decP->u.stru.struct_name, varPoint->p.struct_decPoint.struct_decP->u.stru.struct_name) == 0)
+								{
+									return 2; // struct and struct multi
+								}
+								break;
+							}
+						default:
+							{
+								return -1;
+								break;
+							}
+					}
+					break;
 				}
-			}
-			else
-			{
-				printf("var insert error type\n");
-				return -1;
-			}
+			default:
+				{
+					break;
+				}
 		}
 		nextPoint = nextPoint->next_point;
 	}
