@@ -1,9 +1,4 @@
-int add(int a1, int a2, int arg)
+int main()
 {
-int B1 = a1;
-if(arg == 1)
-{
-a2++;
+	float a;
 }
-return;
- }

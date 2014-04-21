@@ -26,6 +26,7 @@
 		EXP->lineno = lineno;\
 		EXP->mean = mean
 
+int have_wrong = 0;
 expnode * InsertNode(KIND kind,int lineno, int exp_num, int node_num, ...)
 {
 	va_list ap;

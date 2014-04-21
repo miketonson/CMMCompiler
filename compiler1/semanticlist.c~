@@ -21,7 +21,7 @@
 #include "semanticlist.h"
 
 int staLayer = 0;// use to ensure into a layer
-
+int tmpLayer = 0;// use to recognize into a layer
 // hash function
 unsigned int hash_pjw(char *name)
 {
@@ -503,62 +503,25 @@ point * findPoint(char *name, int type, int layer)
 	returnPoint = hashTable[num];
 	while(returnPoint != NULL)
 	{
-		switch(type)
+		if(type == 0)
 		{
-			case 0:
-				{
-					if(returnPoint->point_type == func_dec)
-					{
-						if(strcmp(name, returnPoint->p.func_decPoint->name) == 0)
-						{
-							return returnPoint;
-						}
-					}
-					returnPoint = returnPoint->next_point;
-					break;
-				}
-			case 1:
-				{
-					if(returnPoint->point_type == func_def)
-					{
-						if(strcmp(name, returnPoint->p.func_defPoint->name) == 0)
-						{
-							return returnPoint;
-						}
-					}
-					returnPoint = returnPoint->next_point;
-					break;
-				}
-			case 2:
-				{
-					if(returnPoint->point_type == var_def)
-					{
-						if(strcmp(name, returnPoint->p.var_defPoint.var_defP->name) == 0 && layer >= returnPoint->p.var_defPoint.layer)
-						{
-							return returnPoint;
-						}
-					}
-					returnPoint = returnPoint->next_point;
-					break;
-				}
-			case 3:
-				{
-					if(returnPoint->point_type == struct_dec)
-					{
-						if(strcmp(name, returnPoint->p.struct_decPoint.struct_decP->u.stru.struct_name) == 0 && layer>= returnPoint->p.struct_decPoint.layer)
-						{
-							return returnPoint;
-						}
-					}
-					returnPoint = returnPoint->next_point;
-					break;
-				}
-			default:
-				{
-					printf("error type input\n");
-					break;
-				}
+			if(returnPoint->point_type == variable)
+			{
+				if(strcmp(returnPoint->p.var_point.var_def->name, name) == 0 && returnPoint->p.var_point.layer <= layer)
+					return returnPoint;
+			}
 		}
+		else
+		{
+			if(returnPoint->point_type == function)
+			{
+				if(strcmp(returnPoint->p.func_point->name, name) == 0)
+				{
+					return returnPoint;
+				}
+			}
+		}
+		returnPoint = returnPoint->next_point;
 	}
 	return returnPoint;
 }

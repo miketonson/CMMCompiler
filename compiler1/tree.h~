@@ -15,15 +15,8 @@
  *
  * =====================================================================================
  */
-#ifndef _TREE_H_
-#define _TREE_H_
 
-#include <stdlib.h>
-#include <stdio.h>
-#include <stdarg.h>
-#include <string.h>
-
-extern int have_wrong;
+int have_wrong = 0;
 typedef enum KIND {Program,ExtDefList,ExtDef,Specifier,ExtDecList,FunDec,CompSt,VarDec,StructSpecifier,OptTag,DefList,Tag,VarList,ParamDec,StmtList,Stmt,Exp,Def,DecList,Dec,Args} KIND;
 typedef enum TERM {SEMIm,COMMAm,ASSIGNOPm,PLUSm,MINUSm,STARm,DIVm,ANDm,ORm,DOTm,NOTm,LPm,RPm,LBm,RBm,LCm,RCm,STRUCTm,RETURNm,IFm,ELSEm,WHILEm} TERM;
 typedef enum MEAN {IDm,INTm,FLOATm,TYPEm,RELOPm} MEAN;
@@ -50,20 +43,4 @@ typedef struct expnode
 
 	struct expnode *son_node[10];
 }expnode;
-expnode *RootNode;
 
-expnode * InsertNode(KIND kind,int lineno, int exp_num, int node_num, ...);
-
-expnode * TermNode(TERM term, int lineno);
-
-expnode * IntNode(MEAN mean, int lineno, int int_vaule);
-
-expnode * FloatNode(MEAN mean, int lineno, float float_vaule);
-
-expnode * TypeNode(MEAN mean, int lineno, int type_vaule);
-
-expnode * IdNode(MEAN mean, int lineno, char* id_vaule);
-
-expnode * RelopNode(MEAN mean, int lineno, char* relop_char);
-
-#endif

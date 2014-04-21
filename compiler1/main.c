@@ -1,5 +1,8 @@
 #include <stdio.h>
-#include "syntax.tab.c"
+#include "syntax.tab.h"
+#include "tree.h"
+#include "semanticlist.h"
+#include "semanticanalyze.c"
 /* 
  * ===  FUNCTION  ======================================================================
  *         Name:  main
@@ -21,5 +24,6 @@ int main(int argc, char** argv){
 	//yydebug = 1; 
 	yyparse();
 	PrintTree();
+	SemanticAnalyze();
 	return 0;
 }

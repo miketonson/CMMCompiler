@@ -1,7 +1,7 @@
 %{
 #include <stdio.h>
+#include "tree.h"
 #include "lex.yy.c"
-expnode *RootNode;
 %}
 %locations
 %union{
@@ -557,6 +557,7 @@ void PrintTree()
 				}
 				else
 				{
+					NODE->search_num = 0;
 					NODE = NODE->father_node;
 					tab_num--;
 				}

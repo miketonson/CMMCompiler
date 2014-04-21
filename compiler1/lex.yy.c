@@ -633,7 +633,7 @@ char *yytext;
 #include <stdlib.h>
 #include <string.h>
 #include "syntax.tab.h"
-#include "tree.c"
+#include "tree.h"
 int yycolumn = 1;
 #define YY_USER_ACTION yylloc.first_line = yylloc.last_line = yylineno;\
 	yylloc.first_column = yycolumn; yylloc.last_column = yycolumn + yyleng - 1;\
