@@ -203,7 +203,7 @@ int isSameFunc(point *firPoint, point *secPoint)
 				break;
 			}
 	}
-	switch(isSameType(firFunc->returnType, secFunc->returnType))
+	switch(isSameType(firFunc->returnType, secFunc->returnType, 0))
 	{
 		case 0:
 			break;
@@ -230,7 +230,7 @@ int isSameFunc(point *firPoint, point *secPoint)
 		{
 			return 1; // not same length var
 		}
-		if(isSameType(firTail->var_type, secTail->var_type) != 0)
+		if(isSameType(firTail->var_type, secTail->var_type, 0) != 0)
 		{
 			return 1; // have var not same type
 		}
@@ -240,7 +240,7 @@ int isSameFunc(point *firPoint, point *secPoint)
 	return 0;// same
 }
 // if it is the same type
-int isSameType(type *firType, type *secType)
+int isSameType(type *firType, type *secType, int nowLayerNum)
 {
 	if(firType->kind != secType->kind)
 	{
@@ -262,7 +262,7 @@ int isSameType(type *firType, type *secType)
 			}
 		case array:
 			{
-				int isNext = isSameType(firType->u.array.elem, secType->u.array.elem);
+				int isNext = isSameType(firType->u.array.elem, secType->u.array.elem, nowLayerNum);
 				if(isNext == 0 && firType->u.array.size == secType->u.array.size)
 				{
 					return 0; // same array type
@@ -275,7 +275,7 @@ int isSameType(type *firType, type *secType)
 			}
 		case structure:
 			{
-				if(strcmp(firType->u.stru.struct_name, secType->u.stru.struct_name) == 0 && (firType->u.stru.structure == NULL && secType->u.stru.structure == NULL))
+				if((firType->u.stru.struct_name != NULL && secType->u.stru.struct_name != NULL) && strcmp(firType->u.stru.struct_name, secType->u.stru.struct_name) == 0 && (firType->u.stru.structure == NULL && secType->u.stru.structure == NULL))
 				{
 					return 0; // same struct type
 				}
@@ -283,7 +283,12 @@ int isSameType(type *firType, type *secType)
 				var *secTail = secType->u.stru.structure;
 				if(firTail == NULL && secTail == NULL)
 				{
-					return 1; // not same type
+					char *firName = firType->u.stru.struct_name;
+					char *secName = secType->u.stru.struct_name;
+					point *firPoint = findPoint(firName, 3, nowLayerNum);
+					point *secPoint = findPoint(secName, 3, nowLayerNum);
+					int r = isSameType(firPoint->p.struct_decPoint.struct_decP, secPoint->p.struct_decPoint.struct_decP, nowLayerNum);
+					return r; // not same type
 				}
 				while(firTail != NULL || secTail != NULL)
 				{
@@ -295,7 +300,7 @@ int isSameType(type *firType, type *secType)
 					{
 						return 1; // not same length
 					}
-					if(isSameType(firTail->var_type, secTail->var_type) !=0)
+					if(isSameType(firTail->var_type, secTail->var_type, nowLayerNum + 1) != 0)
 					{
 						return 1; // not same area type
 					}

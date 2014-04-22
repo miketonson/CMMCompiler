@@ -22,6 +22,45 @@
 
 int nowLayerNum = 0;
 
+// only for test
+void printTestError()
+{
+	printSemError();
+// point 1 array
+	point *point1 = findPoint("a", 2, 0);
+	printf("name: %s, type: %d, inner_type: %d\n", point1->p.var_defPoint.var_defP->name, point1->point_type, point1->p.var_defPoint.var_defP->var_type->kind);
+	type *thisType = point1->p.var_defPoint.var_defP->var_type;
+	while(thisType->kind == array)
+	{
+		printf("array: %d ", thisType->u.array.size);
+		thisType = thisType->u.array.elem;
+	}
+	printf("array_type: %d\n", thisType->kind);
+// point 2 int
+	point *point2 = findPoint("b", 2, 0);
+	printf("name: %s, type: %d, inner_type: %d\n", point2->p.var_defPoint.var_defP->name, point2->point_type, point2->p.var_defPoint.var_defP->var_type->kind);
+// point 3 struct
+	point *point3 = findPoint("test", 3, 0);
+	printf("name: %s, type: %d\n", point3->p.struct_decPoint.struct_decP->u.stru.struct_name, point3->point_type);
+	var *thisVar = point3->p.struct_decPoint.struct_decP->u.stru.structure;
+	while(thisVar != NULL)
+	{
+		printf("   name: %s, type : %d\n", thisVar->name, thisVar->var_type->kind);
+		if(thisVar->var_type->kind == array)
+		{
+			type *atype = thisVar->var_type;
+			while(atype->kind == array)
+			{
+				printf("   array: %d ", atype->u.array.size);
+				atype = atype->u.array.elem;
+			}
+			printf("array_type: %d\n", atype->kind);
+		}
+		thisVar = thisVar->t.struct_tail;
+	}
+}
+
+// first time for hash table insert
 void TypeInsert(expnode *NODE)
 {
 	printf("insert:%d\n", NODE->kind);
@@ -29,21 +68,19 @@ void TypeInsert(expnode *NODE)
 	{
 		case ExtDef:
 			{
+				if(NODE->exp_num == 1)
+				{
+					type *varDefType = SpecifierAnalyzer(NODE->son_node[0]);
+					ExtDecAnalyzer(varDefType, NODE->son_node[1]);
+					NODE->search_num = NODE->node_sum;
+					NODE = NODE->father_node;
+				}
 				if(NODE->exp_num == 2)
 				{
-					printf("here 1\n");
 					type *structDecType = SpecifierAnalyzer(NODE->son_node[0]);
-	//				printf("here 2\n");
 					addStructPoint(structDecType, NODE->lineno);
-	//				printf("here 3\n");
-					point *type = findPoint(structDecType->u.stru.struct_name, 3, nowLayerNum);
-					printf("name: %s, type: %d\n", type->p.struct_decPoint.struct_decP->u.stru.struct_name, type->point_type);
-					var *tail = type->p.struct_decPoint.struct_decP->u.stru.structure;
-					while(tail != NULL)
-					{
-						printf("tail: %s, type : %d\n", tail->name, tail->var_type->u.basic);
-						tail = tail->t.struct_tail;
-					}
+					NODE->search_num = NODE->node_sum;
+					NODE = NODE->father_node;
 				}
 				break;
 			}
@@ -54,6 +91,62 @@ void TypeInsert(expnode *NODE)
 			}
 	}
 }
+
+// analyze a ExtDecList node(sub-tree) and insert the points into the hash table
+void ExtDecAnalyzer(type *varDefType, expnode *extDecNode)
+{
+	while(extDecNode->exp_num == 2)
+	{
+		addVarPoint(VarDecAnalyzer(varDefType, extDecNode->son_node[0]), extDecNode->lineno);
+		extDecNode = extDecNode->son_node[2];
+	}
+	addVarPoint(VarDecAnalyzer(varDefType, extDecNode->son_node[0]), extDecNode->lineno);
+}
+
+// analyze a VarDec node(sub-tree) and return a var struct, can do array and def
+var * VarDecAnalyzer(type *varDefType, expnode *varDecNode)
+{
+	var *thisVar;
+	if(varDecNode->kind != VarDec || varDecNode->node_type != 1)
+	{
+		printf("vardec analyze wrong! Input is not a vardec\n");
+		thisVar = NULL;
+		return thisVar;
+	}
+	thisVar = malloc(sizeof(var));
+	switch(varDecNode->exp_num)
+	{
+		case 1:
+			{
+				expnode *myId = varDecNode->son_node[0];
+				thisVar->name = malloc(strlen(myId->id_vaule)+1);
+				strcpy(thisVar->name, myId->id_vaule);
+				thisVar->var_type = varDefType;
+				return thisVar;
+				break;
+			}
+		case 2:
+			{
+				type *thisArrayType;
+				thisArrayType = malloc(sizeof(type));
+				thisArrayType->kind = array;
+				thisArrayType->u.array.elem = varDefType;
+				thisArrayType->u.array.size = varDecNode->son_node[2]->int_vaule;
+				varDecNode = varDecNode->son_node[0];
+				thisVar = VarDecAnalyzer(thisArrayType, varDecNode);
+				return thisVar;
+				break;
+			}
+		default:
+			{
+				printf("vardec exp num error\n");
+				thisVar = NULL;
+				return thisVar;
+				break;
+			}
+	}
+}
+
 // analyze a specifier node(sub-tree) and return a type
 type * SpecifierAnalyzer(expnode *specifier)
 {
@@ -137,6 +230,16 @@ type * SpecifierAnalyzer(expnode *specifier)
 void  DefAnalyzer(expnode *def, int usage, type *structType)
 {
 	type *defType = SpecifierAnalyzer(def->son_node[0]);
+	// if use a struct type to def, check if the struct have been dec
+	if(defType->kind == structure && defType->u.stru.structure == NULL)
+	{
+		point *isDec = findPoint(defType->u.stru.struct_name, 3, nowLayerNum);
+		if(isDec == NULL)
+		{
+			insertError(17, def->lineno);
+			return;
+		}
+	}
 	/*
 	 * if the specifier is a struct and have a name
 	 * and the usage is for Compst but not struct
@@ -147,7 +250,30 @@ void  DefAnalyzer(expnode *def, int usage, type *structType)
 	}
 	/* *
 	 * add hash table finished
+	 *
+	 * if the specifier is a struct and have a name
+	 * and the usage is for Struct
+	 * the struct name can't be same with other def or struct dec
 	 * */
+	if(usage == 0 && (defType->kind == structure && defType->u.stru.struct_name != NULL))
+	{
+		var *structTail;
+		structTail = structType->u.stru.structure;
+		while(structTail != NULL && structTail->t.struct_tail != NULL)
+		{
+			if(strcmp(structTail->name, defType->u.stru.struct_name) == 0)
+			{
+				insertError(15, def->lineno);
+				return;
+			}
+			structTail = structTail->t.struct_tail;
+		}
+		if(strcmp(structTail->name, defType->u.stru.struct_name) == 0)
+		{
+			insertError(15, def->lineno);
+			return;
+		}
+	}
 	expnode *decList;
 	decList = def->son_node[1];
 	//int nowDec = 0;
@@ -161,32 +287,18 @@ void  DefAnalyzer(expnode *def, int usage, type *structType)
 		{
 			case 0:
 				{
-					if(varDec->exp_num == 1)
-					{
-						expnode *myId;
-						myId = varDec->son_node[0];
-						varList->name = malloc(strlen(myId->id_vaule)+1);
-						strcpy(varList->name, myId->id_vaule);
-						varList->var_type = defType;
-						varList->t.struct_tail = NULL;
-						insertStructTail(varList, structType, varDec->lineno);
-					}
-					// exp_num == 2 is a array, later do it
+					varList = VarDecAnalyzer(defType, varDec);
+					varList->t.struct_tail = NULL;
+					insertStructTail(varList, structType, varDec->lineno);
+					
 					// dec->exp_num == 2 have = and exp, do it later
 					break;
 				}
 			case 1:
 				{
-					if(varDec->exp_num == 1)
-					{
-						expnode *myId;
-						myId = varDec->son_node[0];
-						varList->name = malloc(strlen(myId->id_vaule)+1);
-						strcpy(varList->name, myId->id_vaule);
-						varList->var_type = defType;
-						addVarPoint(varList, varDec->lineno);
-					}
-					//exp_num == 2 is a array, latter do it
+					varList = VarDecAnalyzer(defType, varDec);
+					addVarPoint(varList, varDec->lineno);
+					
 					//dec->exp_num == 2 have = and exp, do it later
 					break;
 				}
@@ -208,32 +320,18 @@ void  DefAnalyzer(expnode *def, int usage, type *structType)
 	{
 		case 0:
 			{
-				if(varDec->exp_num == 1)
-				{
-					expnode *myId;
-					myId = varDec->son_node[0];
-					varList->name = malloc(strlen(myId->id_vaule)+1);
-					strcpy(varList->name, myId->id_vaule);
-					varList->var_type = defType;
-					varList->t.struct_tail = NULL;
-					insertStructTail(varList, structType, varDec->lineno);
-				}
-				// exp_num == 2 is a array, later do it
+				varList = VarDecAnalyzer(defType, varDec);
+				varList->t.struct_tail = NULL;
+				insertStructTail(varList, structType, varDec->lineno);
+				
 				// dec->exp_num == 2 is wrong here, do it later	
 				break;
 			}
 		case 1:
 			{
-				if(varDec->exp_num == 1)
-				{
-					expnode *myId;
-					myId = varDec->son_node[0];
-					varList->name = malloc(strlen(myId->id_vaule)+1);
-					strcpy(varList->name, myId->id_vaule);
-					varList->var_type = defType;
-					addVarPoint(varList, varDec->lineno);
-				}
-				//exp_num == 2 is a array, latter do it
+				varList = VarDecAnalyzer(defType, varDec);
+				addVarPoint(varList, varDec->lineno);
+				
 				// same
 				break;
 			}
@@ -258,12 +356,28 @@ void insertStructTail(var *varTail, type *structType, int lineno)
 	}
 	while(structTail->t.struct_tail != NULL)
 	{
+		if(structTail->var_type->kind == structure && structTail->var_type->u.stru.struct_name != NULL)
+		{
+			if(strcmp(structTail->var_type->u.stru.struct_name, varTail->name) == 0)
+			{
+				insertError(15, lineno);
+				return;
+			}
+		}
 		if(strcmp(structTail->name, varTail->name) == 0)
 		{
 			insertError(15, lineno);
 			return;
 		}
 		structTail = structTail->t.struct_tail;
+	}
+	if(structTail->var_type->kind == structure && structTail->var_type->u.stru.struct_name != NULL)
+	{
+		if(strcmp(structTail->var_type->u.stru.struct_name, varTail->name) == 0)
+		{
+			insertError(15, lineno);
+			return;
+		}
 	}
 	if(strcmp(structTail->name, varTail->name) == 0)
 	{
@@ -372,6 +486,17 @@ void insertError(int errorType, int lineno)
 		errorNext = errorNext->nextErrorNode;
 	}
 	errorNext->nextErrorNode = ERROR;
+	return;
+}
+void printSemError()
+{
+	errorNode *errorNext;
+	errorNext = semErrorList;
+	while(errorNext != NULL)
+	{
+		printf("Error type %d at line %d\n", errorNext->errorType, errorNext->lineno);
+		errorNext = errorNext->nextErrorNode;
+	}
 	return;
 }
 void SemanticAnalyze()

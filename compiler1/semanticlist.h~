@@ -52,7 +52,7 @@ struct Type_
 		struct
 		{
 			char *struct_name;//struct type name, NULL means have no name
-			var *structure;//area in the struct
+			var *structure;//area in the struct, NULL means it for a var def, not a struct dec
 		} stru;			
 	} u;
 };
@@ -102,8 +102,6 @@ varStack *nowLayer;
  * begin the function for table insertion and find
  * and the function for layer operation
  * */
-extern int staLayer;
-
 
 // hash function
 unsigned int hash_pjw(char *name);

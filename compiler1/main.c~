@@ -2,7 +2,7 @@
 #include "syntax.tab.h"
 #include "tree.h"
 #include "semanticlist.h"
-#include "semanticanalyze.c"
+#include "semanticanalyze.h"
 /* 
  * ===  FUNCTION  ======================================================================
  *         Name:  main

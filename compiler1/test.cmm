@@ -1,12 +1,8 @@
+int a[2][3];
+int b;
 struct test
 {
-	int a;
-	float b;
-	float a;
+	int a[3][6];
+	int b;
 };
 
-struct test2
-{
-	int c;
-	float d;
-};

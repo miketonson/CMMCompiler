@@ -37,7 +37,15 @@ struct ErrorNode_
 
 errorNode *semErrorList;// semantic error list
 
+void printTestError();
+
 void TypeInsert(expnode *NODE);
+
+// analyze a ExtDecList node(sub-tree) and insert the points into the hash table
+void ExtDecAnalyzer(type *varDefType, expnode *extDecNode);
+
+// analyze a VarDec node(sub-tree) and return a var struct, can do array and def
+var * VarDecAnalyzer(type *varDefType, expnode *varDecNode);
 
 // analyze a specifier node(sub-tree) and return a type
 type * SpecifierAnalyzer(expnode *specifier);
@@ -56,6 +64,8 @@ void addStructPoint(type *structDec, int lineno);
 
 // insert a error into a error list
 void insertError(int errorType, int lineno);
+
+void printSemError();
 
 void SemanticAnalyze();
 

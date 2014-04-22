@@ -125,7 +125,7 @@ int addFuncTable(point *funcPoint);
 int isSameFunc(point *firPoint, point *secPoint);
 
 // if it is the same type
-int isSameType(type *firType, type *secType);
+int isSameType(type *firType, type *secType, int nowLayerNum);
 
 // add variable point to hash table
 int addVarTable(point *varPoint);
