@@ -32,6 +32,7 @@ struct ErrorNode_
 {
 	int errorType;
 	int lineno;
+	char *func_decName;
 	errorNode *nextErrorNode;
 };
 
@@ -40,6 +41,27 @@ errorNode *semErrorList;// semantic error list
 void printTestError();
 
 void TypeInsert(expnode *NODE);
+
+// analyze a DefList Node(sub-tree) and insert var def into hash table
+void DefListAnalyzer(expnode *defListNode);
+
+// analyze a StmtList Node(sub-tree) and check semantic errors
+void StmtListAnalyzer(expnode *stmtListNode);
+
+// analyze a Stmt Node(sub-tree) and check semantic errors
+void StmtAnalyzer(expnode *stmtNode);
+
+// analyze a Exp Node(sub-tree) and return something by the etype requested
+// etype:
+// 0 for finding a real type, from + - * / , or int float struct array
+// 1 for analyze =
+// 2 for analyze booleans, from AND OR RELOP NOT
+// 3 for find if it is a left type
+type * ExpAnalyzer(expnode *expNode, int etype);
+
+// analyze a FunDec Node(sub-tree) and insert func_def and func_dec points into hash table
+// ftype 0 for dec, 1 for def
+void FunDecAnalyzer(type *funcType, expnode *funDecNode, int ftype);
 
 // analyze a ExtDecList node(sub-tree) and insert the points into the hash table
 void ExtDecAnalyzer(type *varDefType, expnode *extDecNode);
@@ -63,7 +85,7 @@ void addVarPoint(var *varDef, int lineno);
 void addStructPoint(type *structDec, int lineno);
 
 // insert a error into a error list
-void insertError(int errorType, int lineno);
+void insertError(int errorType, int lineno, char *func_decName);
 
 void printSemError();
 

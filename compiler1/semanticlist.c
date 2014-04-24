@@ -140,6 +140,10 @@ int addFuncTable(point *funcPoint)
 						}
 						case 1:
 						{
+							funcPoint->p.func_defPoint = nextPoint->p.func_decPoint;
+							hashTable[value]->former_point = funcPoint;
+							funcPoint->next_point = hashTable[value];
+							hashTable[value] = funcPoint;
 							return 2;// func def and dec not same
 						}
 					}
@@ -347,7 +351,7 @@ int addVarTable(point *varPoint)
 					{
 						case var_def:
 							{
-								if(strcmp(nextPoint->p.var_defPoint.var_defP->name, varPoint->p.var_defPoint.var_defP->name) == 0)
+								if(strcmp(nextPoint->p.var_defPoint.var_defP->name, varPoint->p.var_defPoint.var_defP->name) == 0 && varPoint->p.var_defPoint.layer == nextPoint->p.var_defPoint.layer)
 								{
 									return 1; // def and def multi
 								}
@@ -355,7 +359,7 @@ int addVarTable(point *varPoint)
 							}
 						case struct_dec:
 							{
-								if(strcmp(nextPoint->p.var_defPoint.var_defP->name, varPoint->p.struct_decPoint.struct_decP->u.stru.struct_name) == 0)
+								if(strcmp(nextPoint->p.var_defPoint.var_defP->name, varPoint->p.struct_decPoint.struct_decP->u.stru.struct_name) == 0 && varPoint->p.struct_decPoint.layer == nextPoint->p.var_defPoint.layer)
 								{
 									return 2; // struct and def multi
 								}
@@ -375,7 +379,7 @@ int addVarTable(point *varPoint)
 					{
 						case var_def:
 							{
-								if(strcmp(nextPoint->p.struct_decPoint.struct_decP->u.stru.struct_name, varPoint->p.var_defPoint.var_defP->name) == 0)
+								if(strcmp(nextPoint->p.struct_decPoint.struct_decP->u.stru.struct_name, varPoint->p.var_defPoint.var_defP->name) == 0 && varPoint->p.var_defPoint.layer == nextPoint->p.struct_decPoint.layer)
 								{
 									return 1; // def and struct multi
 								}
@@ -383,7 +387,7 @@ int addVarTable(point *varPoint)
 							}
 						case struct_dec:
 							{
-								if(strcmp(nextPoint->p.struct_decPoint.struct_decP->u.stru.struct_name, varPoint->p.struct_decPoint.struct_decP->u.stru.struct_name) == 0)
+								if(strcmp(nextPoint->p.struct_decPoint.struct_decP->u.stru.struct_name, varPoint->p.struct_decPoint.struct_decP->u.stru.struct_name) == 0 && varPoint->p.struct_decPoint.layer == nextPoint->p.struct_decPoint.layer)
 								{
 									return 2; // struct and struct multi
 								}

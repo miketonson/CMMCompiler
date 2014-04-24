@@ -25,5 +25,6 @@ int main(int argc, char** argv){
 	yyparse();
 	PrintTree();
 	SemanticAnalyze();
+	printTestError();
 	return 0;
 }

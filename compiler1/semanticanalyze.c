@@ -21,11 +21,13 @@
 #include "semanticanalyze.h"
 
 int nowLayerNum = 0;
+type *nowReturnType;
 
 // only for test
 void printTestError()
 {
 	printSemError();
+	/*
 // point 1 array
 	point *point1 = findPoint("a", 2, 0);
 	printf("name: %s, type: %d, inner_type: %d\n", point1->p.var_defPoint.var_defP->name, point1->point_type, point1->p.var_defPoint.var_defP->var_type->kind);
@@ -58,31 +60,99 @@ void printTestError()
 		}
 		thisVar = thisVar->t.struct_tail;
 	}
+	point *point4 = findPoint("test", 0, 0);
+	printf("name: %s, type: %d\n", point4->p.func_decPoint->name, point4->point_type);
+	var *tail = point4->p.func_decPoint->funcVarDef;
+	while(tail != NULL)
+	{
+		printf("  tail: %s, type: %d\n", tail->name, tail->var_type->kind);
+		tail = tail->t.funcDef_tail;
+	}
+	point *point5 = findPoint("a", 2, 1);
+	if(point5 == NULL)
+	{
+		printf("dfg\n");
+	}*/
 }
 
 // first time for hash table insert
 void TypeInsert(expnode *NODE)
 {
-	printf("insert:%d\n", NODE->kind);
 	switch(NODE->kind)
 	{
 		case ExtDef:
 			{
-				if(NODE->exp_num == 1)
+				switch(NODE->exp_num)
 				{
-					type *varDefType = SpecifierAnalyzer(NODE->son_node[0]);
-					ExtDecAnalyzer(varDefType, NODE->son_node[1]);
-					NODE->search_num = NODE->node_sum;
-					NODE = NODE->father_node;
-				}
-				if(NODE->exp_num == 2)
-				{
-					type *structDecType = SpecifierAnalyzer(NODE->son_node[0]);
-					addStructPoint(structDecType, NODE->lineno);
-					NODE->search_num = NODE->node_sum;
-					NODE = NODE->father_node;
+					case 1: // for var def
+						{
+							type *varDefType = SpecifierAnalyzer(NODE->son_node[0]);
+							if(varDefType->kind == structure && varDefType->u.stru.structure != NULL && varDefType->u.stru.struct_name !=NULL)
+							{
+								addStructPoint(varDefType, NODE->lineno);
+							}
+						
+							ExtDecAnalyzer(varDefType, NODE->son_node[1]);
+							NODE->search_num = NODE->node_sum;
+							NODE = NODE->father_node;
+							break;
+						}
+					case 2: // for struct dec
+						{
+							type *structDecType = SpecifierAnalyzer(NODE->son_node[0]);
+							if(structDecType->kind == structure && structDecType->u.stru.structure != NULL && structDecType->u.stru.struct_name !=NULL)
+							{
+								addStructPoint(structDecType, NODE->lineno);
+							}
+							NODE->search_num = NODE->node_sum;
+							NODE = NODE->father_node;
+							break;
+						}
+					case 3: // for function def
+						{
+							type *funcType = SpecifierAnalyzer(NODE->son_node[0]);
+							if(funcType->kind == structure && funcType->u.stru.structure != NULL && funcType->u.stru.struct_name !=NULL)
+							{
+								addStructPoint(funcType, NODE->lineno);
+							}
+							nowLayerNum++;
+							pushLayerStack(nowLayerNum);
+							FunDecAnalyzer(funcType, NODE->son_node[1], 1);
+							NODE->search_num = 2;
+							break;
+						}
+					case 4: // for function dec
+						{
+							type *funcType = SpecifierAnalyzer(NODE->son_node[0]);
+							if(funcType->kind == structure && funcType->u.stru.structure != NULL && funcType->u.stru.struct_name !=NULL)
+							{
+								addStructPoint(funcType, NODE->lineno);
+							}
+							nowLayerNum++;
+							pushLayerStack(nowLayerNum);
+							FunDecAnalyzer(funcType, NODE->son_node[1], 0);
+							pullLayerStack();
+							nowLayerNum--;
+							NODE->search_num = NODE->node_sum;
+							NODE = NODE->father_node;
+							break;
+						}
+					default:
+						{
+							printf("error exp num for extdef node\n");
+							break;
+						}
 				}
 				break;
+			}
+		case CompSt:
+			{
+				DefListAnalyzer(NODE->son_node[1]);
+				StmtListAnalyzer(NODE->son_node[2]);
+				pullLayerStack();
+				nowLayerNum--;
+				NODE->search_num = NODE->node_sum;
+				NODE = NODE->father_node;
 			}
 		default:
 			{
@@ -91,7 +161,728 @@ void TypeInsert(expnode *NODE)
 			}
 	}
 }
+// analyze a DefList Node(sub-tree) and insert var def into hash table
+void DefListAnalyzer(expnode *defListNode)
+{
+	type *nouse = NULL;
+	while(defListNode->exp_num == 1)
+	{
+		DefAnalyzer(defListNode->son_node[0], 1, nouse);
+		defListNode = defListNode->son_node[1];
+	}
+	return;
+}
+// analyze a StmtList Node(sub-tree) and check semantic errors
+void StmtListAnalyzer(expnode *stmtListNode)
+{
+	while(stmtListNode->exp_num == 1)
+	{
+		StmtAnalyzer(stmtListNode->son_node[0]);
+		stmtListNode = stmtListNode->son_node[1];
+	}
+	return;
+}
+// analyze a Stmt Node(sub-tree) and check semantic errors
+void StmtAnalyzer(expnode *stmtNode)
+{
+	switch(stmtNode->exp_num)
+	{
+		case 1: // exp SEMI
+			{
+				type *expType;
+				expType = ExpAnalyzer(stmtNode->son_node[0], 1);
+				break;
+			}
+		case 2: // compSt
+			{
+				DefListAnalyzer(stmtNode->son_node[0]->son_node[1]);
+				StmtListAnalyzer(stmtNode->son_node[0]->son_node[2]);
+				break;
+			}
+		case 3: // return
+			{
+				type *expType;
+				expType = ExpAnalyzer(stmtNode->son_node[1], 0);
+				// here have to compare with the func return type
+				if(expType != NULL && isSameType(nowReturnType, expType, nowLayerNum) == 1)
+				{
+					insertError(8, stmtNode->lineno, NULL);
+				}
+				break;
+			}
+		case 4: // IF
+			{
+				type *expType;
+				expType = ExpAnalyzer(stmtNode->son_node[2], 2);
+				nowLayerNum++;
+				pushLayerStack(nowLayerNum);
+				StmtAnalyzer(stmtNode->son_node[4]);
+				pullLayerStack();
+				nowLayerNum--;
+				break;
+			}
+		case 5: // IF ELSE
+			{
+				type *expType;
+				expType = ExpAnalyzer(stmtNode->son_node[2], 2);
+				nowLayerNum++;
+				pushLayerStack(nowLayerNum);
+				StmtAnalyzer(stmtNode->son_node[4]);
+				pullLayerStack();
+				nowLayerNum--;
+				nowLayerNum++;
+				pushLayerStack(nowLayerNum);
+				StmtAnalyzer(stmtNode->son_node[6]);
+				pullLayerStack();
+				nowLayerNum--;
+				break;
+			}
+		case 6: // WHILE
+			{
+				type *expType;
+				expType = ExpAnalyzer(stmtNode->son_node[2], 2);
+				nowLayerNum++;
+				pushLayerStack(nowLayerNum);
+				StmtAnalyzer(stmtNode->son_node[4]);
+				pullLayerStack();
+				nowLayerNum--;
+				break;
+			}
+	}
+}
+// analyze a Exp Node(sub-tree) and return something by the etype requested
+// etype:
+// 0 for finding a real type, from + - * / , or int float struct array
+// 1 for analyze =
+// 2 for analyze booleans, from AND OR RELOP NOT
+// 3 for find if it is a left type
+type * ExpAnalyzer(expnode *expNode, int etype)
+{
+	type *thisType;
+	switch(expNode->exp_num)
+	{
+		case 1: // =
+			{
+				if(etype == 1 || etype == 2)
+				{
+					type *leftType = ExpAnalyzer(expNode->son_node[0], 3);
+					type *rightType = ExpAnalyzer(expNode->son_node[2], 0);
+					if(leftType == NULL || rightType == NULL)
+					{
+						thisType = NULL;
+						return thisType;
+					}
+					int errorType = isSameType(leftType, rightType, nowLayerNum);
+					if(errorType == 1)
+					{
+						insertError(5, expNode->lineno, NULL);
+						thisType = NULL;
+						return thisType;
+					}
+					else
+					{
+						thisType = leftType;
+						return thisType;
+					}
+				}
+				else
+				{
+					thisType = NULL;
+					return thisType;
+				}
+				break;
+			}
+		case 2: // AND
+		case 3: // OR
+		case 4: // RELOP
+			{
+				if(etype == 2 || etype == 1)
+				{
+					type *firType = ExpAnalyzer(expNode->son_node[0], 0);
+					type *secType = ExpAnalyzer(expNode->son_node[2], 0);
+					if(firType == NULL || secType == NULL)
+					{
+						thisType = NULL;
+						return thisType;
+					}
+					if((firType->kind == basic && firType->u.basic == 0) && (secType->kind == basic && secType->u.basic == 0))
+					{
+						thisType = firType;
+						return thisType;
+					}
+					else
+					{
+						insertError(7, expNode->lineno, NULL);
+						thisType = NULL;
+						return thisType;
+					}
+				}
+				else if(etype == 3)
+				{
+					insertError(6, expNode->lineno, NULL);
+					thisType = NULL;
+					return thisType;
+				}
+				else
+				{
+					thisType = NULL;
+					return thisType;
+				}
+				break;
+			}
+		case 5: // PLUS
+		case 6: // MINUS
+		case 7: // STAR
+		case 8: // DIV
+			{
+				if(etype == 0 || etype == 1 || etype == 2)
+				{
+					type *firType = ExpAnalyzer(expNode->son_node[0], 0);
+					type *secType = ExpAnalyzer(expNode->son_node[2], 0);
+					if(firType == NULL || secType == NULL)
+					{
+						thisType = NULL;
+						return thisType;
+					}
+					if(isSameType(firType, secType, nowLayerNum) == 1 || firType->kind == array || firType->kind == structure)
+					{
+						insertError(7, expNode->lineno, NULL);
+						thisType = NULL;
+						return thisType;
+					}
+					else
+					{
+						thisType = firType;
+						return thisType;
+					}
+				}
+				else if(etype == 3)
+				{
+					insertError(6, expNode->lineno, NULL);
+					thisType = NULL;
+					return thisType;
+				}
+				else
+				{
+					thisType = NULL;
+					return thisType;
+				}
+				break;
+			}
+		case 9: // LP EXP RP
+			{
+				if(etype == 0 || etype == 2 || etype == 3 || etype == 1)
+				{
+					thisType = ExpAnalyzer(expNode->son_node[1], etype);
+					return thisType;
+				}
+				else
+				{
+					thisType = NULL;
+					return thisType;
+				}
+				break;
+			}
+		case 10: // MINUS EXP
+			{
+				if(etype == 0 || etype == 1 || etype == 2) 
+				{
+					thisType = ExpAnalyzer(expNode->son_node[1], 0);
+					return thisType;
+				}
+				else if(etype == 3)
+				{
+					insertError(6, expNode->lineno, NULL);
+					thisType = NULL;
+					return thisType;
+				}
+				else
+				{
+					thisType = NULL;
+					return thisType;
+				}
+				break;
+			}
+		case 11: // NOT EXP
+			{
+				if(etype == 2 || etype == 1)
+				{
+					thisType = ExpAnalyzer(expNode->son_node[1], 2);
+					return thisType;
+				}
+				else if(etype == 3)
+				{
+					insertError(6, expNode->lineno, NULL);
+					thisType = NULL;
+					return thisType;
+				}
+				else
+				{
+					thisType = NULL;
+					return thisType;
+				}
+				break;
+			}
+		case 12: // ID LP ARGS RP
+			{
+				if(etype == 0 || etype == 1 || etype == 2)
+				{
+					point *thisFunc = findPoint(expNode->son_node[0]->id_vaule, 1, nowLayerNum);
+					if(thisFunc == NULL)
+					{
+						thisFunc = findPoint(expNode->son_node[0]->id_vaule, 0, nowLayerNum);
+						point *isFunc = findPoint(expNode->son_node[0]->id_vaule, 2, nowLayerNum);
+						if(thisFunc == NULL && isFunc != NULL)
+						{
+							insertError(11, expNode->lineno, NULL);
+							thisType = NULL;
+							return thisType;
+						}
+						else if(thisFunc == NULL && isFunc == NULL)
+						{
+							insertError(2, expNode->lineno, NULL);
+							thisType = NULL;
+							return thisType;
+						}
+						// check if same with func dec
+						thisType = thisFunc->p.func_decPoint->returnType;
+						var *funcVarDef = thisFunc->p.func_decPoint->funcVarDef;
+						expnode *thisArgNode = expNode->son_node[2];
+						while(thisArgNode->exp_num == 1)
+						{
+							type *argType = ExpAnalyzer(thisArgNode->son_node[0], 0);
+							if(funcVarDef == NULL || argType == NULL)
+							{
+								insertError(9, expNode->lineno, NULL);
+								return thisType;
+								break;
+							}
+							else if(isSameType(funcVarDef->var_type, argType, nowLayerNum) == 1)
+							{
+								insertError(9, expNode->lineno, NULL);
+								return thisType;
+								break;
+							}
+							thisArgNode = thisArgNode->son_node[2];
+							funcVarDef = funcVarDef->t.funcDef_tail;
+						}
+						type *argType = ExpAnalyzer(thisArgNode->son_node[0], 0);
+						if(funcVarDef == NULL || argType == NULL)
+						{
+							insertError(9, expNode->lineno, NULL);
+							return thisType;
+						}
+						else if(isSameType(funcVarDef->var_type, argType, nowLayerNum) == 1)
+						{
+							insertError(9, expNode->lineno, NULL);
+							return thisType;
+						}
+						else
+						{
+							funcVarDef = funcVarDef->t.funcDef_tail;
+							if(funcVarDef != NULL)
+							{
+								insertError(9, expNode->lineno, NULL);
+								return thisType;
+							}
+						}
+						// add this error for later check
+						insertError(2, expNode->lineno, thisFunc->p.func_decPoint->name);
+						return thisType;
+					}
+					// check if same with func def
+					thisType = thisFunc->p.func_defPoint->returnType;
+					var *funcVarDef = thisFunc->p.func_defPoint->funcVarDef;
+					expnode *thisArgNode = expNode->son_node[2];
+					while(thisArgNode->exp_num == 1)
+					{
+						type *argType = ExpAnalyzer(thisArgNode->son_node[0], 0);
+						if(funcVarDef == NULL || argType == NULL)
+						{
+							insertError(9, expNode->lineno, NULL);
+							return thisType;
+							break;
+						}
+						else if(isSameType(funcVarDef->var_type, argType, nowLayerNum) == 1)
+						{
+							insertError(9, expNode->lineno, NULL);
+							return thisType;
+							break;
+						}
+						thisArgNode = thisArgNode->son_node[2];
+						funcVarDef = funcVarDef->t.funcDef_tail;
+					}
+					type *argType = ExpAnalyzer(thisArgNode->son_node[0], 0);
+					if(funcVarDef == NULL || argType == NULL)
+					{
+						insertError(9, expNode->lineno, NULL);
+						return thisType;
+					}
+					else if(isSameType(funcVarDef->var_type, argType, nowLayerNum) == 1)
+					{
+						insertError(9, expNode->lineno, NULL);
+						return thisType;
+					}
+					else
+					{
+						funcVarDef = funcVarDef->t.funcDef_tail;
+						if(funcVarDef != NULL)
+						{
+							insertError(9, expNode->lineno, NULL);
+							return thisType;
+						}
+					}		
+					return thisType;
+				}
+				else if(etype == 3)
+				{
+					insertError(6, expNode->lineno, NULL);
+					thisType = NULL;
+					return thisType;
+				}
+				else
+				{
+					thisType = NULL;
+					return thisType;
+				}
+				break;
+			}
+		case 13: // ID LP RP
+			{
+				if(etype == 0 || etype == 1 || etype == 2)
+				{
+					point *thisFunc = findPoint(expNode->son_node[0]->id_vaule, 1, nowLayerNum);
+					if(thisFunc == NULL)
+					{
+						thisFunc = findPoint(expNode->son_node[0]->id_vaule, 0, nowLayerNum);
+						point *isFunc = findPoint(expNode->son_node[0]->id_vaule, 2, nowLayerNum);
+						if(thisFunc == NULL && isFunc != NULL)
+						{
+							insertError(11, expNode->lineno, NULL);
+							thisType = NULL;
+							return thisType;
+						}
+						else if(thisFunc == NULL && isFunc == NULL)
+						{
+							insertError(2, expNode->lineno, NULL);
+							thisType = NULL;
+							return thisType;
+						}
 
+						thisType = thisFunc->p.func_decPoint->returnType;
+						if(thisFunc->p.func_decPoint->funcVarDef != NULL)
+						{
+							insertError(9, expNode->lineno, NULL);
+							return thisType;
+						}
+						insertError(2, expNode->lineno, thisFunc->p.func_decPoint->name);
+						return thisType;
+					}
+					thisType = thisFunc->p.func_defPoint->returnType;
+					if(thisFunc->p.func_defPoint->funcVarDef != NULL)
+					{
+						insertError(9, expNode->lineno, NULL);
+						return thisType;
+					}
+					return thisType;
+				}
+				else if(etype == 3)
+				{
+					insertError(6, expNode->lineno, NULL);
+					thisType = NULL;
+					return thisType;
+				}
+				else
+				{
+					thisType = NULL;
+					return thisType;
+				}
+				break;
+			}
+		case 14: // EXP LB EXP RB
+			{
+				if(etype == 0 || etype == 1 || etype == 3 || etype == 2)
+				{
+					type *arrayType;
+					arrayType = ExpAnalyzer(expNode->son_node[0], 0);
+					if(arrayType == NULL)
+					{
+						thisType = NULL;
+					}
+					if(arrayType->kind == array && arrayType->u.array.elem != NULL)
+					{
+						thisType = arrayType->u.array.elem;
+					}
+					else
+					{
+						insertError(10, expNode->lineno, NULL);
+						thisType = NULL;
+					}
+					type *innerType;
+					innerType = ExpAnalyzer(expNode->son_node[2], 0);
+					if(innerType != NULL && (innerType->kind != basic || innerType->u.basic != 0))
+					{
+						insertError(12, expNode->lineno, NULL);
+					}
+					return thisType;
+				}
+				else
+				{
+					thisType = NULL;
+					return thisType;
+				}
+				break;
+			}
+		case 15: // EXP DOT ID
+			{
+				if(etype == 0 || etype == 1 || etype == 3 || etype == 2)
+				{
+					type *structType;
+					structType = ExpAnalyzer(expNode->son_node[0], 0);
+					if(structType->u.stru.struct_name != NULL && structType->u.stru.structure == NULL)
+					{
+						point *findStructPoint = findPoint(structType->u.stru.struct_name, 3, nowLayerNum);
+						structType = findStructPoint->p.struct_decPoint.struct_decP;
+					}
+					if(structType == NULL)
+					{
+						thisType = NULL;
+						return thisType;
+					}
+
+					if(structType->kind != structure)
+					{
+						insertError(13, expNode->lineno, NULL);
+						thisType = NULL;
+						return thisType;
+					}
+					int have_var = 0;
+					var *varTail = structType->u.stru.structure;
+					while(varTail != NULL)
+					{
+						if(strcmp(expNode->son_node[2]->id_vaule,  varTail->name) == 0)
+						{
+							thisType = varTail->var_type;
+							have_var = 1;
+							break;
+						}
+						varTail = varTail->t.struct_tail;
+					}
+					if(have_var == 0)
+					{
+						insertError(14, expNode->lineno, NULL);
+						thisType = NULL;
+						return thisType;
+					}
+					else
+					{
+						return thisType;
+					}
+				}
+				else
+				{
+					thisType = NULL;
+					return thisType;
+				}
+				break;
+			}
+		case 16: //  ID
+			 {
+				 if(etype == 0 || etype == 1 || etype == 2 || etype == 3)
+				 {
+					 point *herePoint;
+					herePoint = findPoint(expNode->son_node[0]->id_vaule, 2, nowLayerNum);
+					 if(herePoint == NULL)
+					 {
+						 insertError(1, expNode->lineno, NULL);
+						 thisType = NULL;
+						 return thisType;
+					 }
+					 thisType = herePoint->p.var_defPoint.var_defP->var_type;
+					 return thisType;
+				 }
+				 else
+				 {
+					 thisType = NULL;
+					 return thisType;
+				 }
+				 break;
+			 }
+		case 17: // INT
+			 {
+				 if(etype == 0 || etype == 1 || etype == 2)
+				 {
+					 type *intType;
+					 intType = malloc(sizeof(type));
+					 intType->kind = basic;
+					 intType->u.basic = 0;
+					 thisType = intType;
+					 return thisType;
+				 }
+				 else if(etype == 3)
+				 {
+					 insertError(6, expNode->lineno, NULL);
+					 thisType = NULL;
+					 return thisType;
+				 }
+				 else
+				 {
+					 thisType = NULL;
+					 return thisType;
+				 }
+				 break;
+			 }
+		case 18: // FLOAT
+			 {
+				 if(etype == 0 || etype == 1 || etype == 2)
+				 {
+					 type *floatType;
+					 floatType = malloc(sizeof(type));
+					 floatType->kind = basic;
+					 floatType->u.basic = -1;
+					 thisType = floatType;
+					 return thisType;
+				 }
+				 else if(etype == 3)
+				 {
+					 insertError(6, expNode->lineno, NULL);
+					 thisType = NULL;
+					 return thisType;
+				 }
+				 else
+				 {
+					 thisType = NULL;
+					 return thisType;
+				 }
+				 break;
+			 }
+	}
+}
+// analyze a FunDec Node(sub-tree) and insert func_def and func_dec points into hash table
+// ftype 0 for dec, 1 for def
+void FunDecAnalyzer(type *funcType, expnode *funDecNode, int ftype)
+{
+	int errorType;
+	point *funcPoint;
+	funcPoint = malloc(sizeof(point));
+	funcDef *funcD;
+	funcD = malloc(sizeof(funcDef));
+	funcD->returnType = funcType;
+	funcD->name = malloc(strlen(funDecNode->son_node[0]->id_vaule) + 1);
+	strcpy(funcD->name, funDecNode->son_node[0]->id_vaule);
+	switch(ftype)
+	{
+		case 0:
+			{
+				funcPoint->point_type = func_dec;
+				funcPoint->p.func_decPoint = funcD;
+				break;
+			}
+		case 1:
+			{
+				nowReturnType = funcType;
+				funcPoint->point_type = func_def;
+				funcPoint->p.func_defPoint = funcD;
+				break;
+			}
+		default:
+			{
+				printf("error f type input\n");
+				return;
+				break;
+			}
+	}
+
+	if(funDecNode->exp_num == 2)
+	{
+		funcD->funcVarDef = NULL;
+		errorType = addFuncTable(funcPoint);
+	}
+	else
+	{
+		expnode *varListNode = funDecNode->son_node[2];
+		if(varListNode->exp_num == 1)
+		{
+			expnode *pDec = varListNode->son_node[0];
+			type *funcDefType = SpecifierAnalyzer(pDec->son_node[0]);
+			var *funcDef = VarDecAnalyzer(funcDefType, pDec->son_node[1]);
+	
+			if(funcDefType->kind == structure && funcDefType->u.stru.struct_name != NULL && funcDefType->u.stru.structure != NULL)
+			{
+				addStructPoint(funcDefType, pDec->lineno);
+			}
+			addVarPoint(funcDef, pDec->lineno);
+			funcD->funcVarDef = funcDef;
+			var *nextDef = funcDef;
+			varListNode = varListNode->son_node[2];
+	
+			while(varListNode->exp_num == 1)
+			{
+				pDec = varListNode->son_node[0];
+				funcDefType = SpecifierAnalyzer(pDec->son_node[0]);
+				funcDef = VarDecAnalyzer(funcDefType, pDec->son_node[1]);
+	
+				if(funcDefType->kind == structure && funcDefType->u.stru.struct_name != NULL && funcDefType->u.stru.structure != NULL)
+				{
+					addStructPoint(funcDefType, pDec->lineno);
+				}
+				addVarPoint(funcDef, pDec->lineno);
+				
+				nextDef->t.funcDef_tail = funcDef;
+				nextDef = funcDef;
+				varListNode = varListNode->son_node[2];
+			}
+			pDec = varListNode->son_node[0];
+			funcDefType = SpecifierAnalyzer(pDec->son_node[0]);
+			funcDef = VarDecAnalyzer(funcDefType, pDec->son_node[1]);
+			
+			if(funcDefType->kind == structure && funcDefType->u.stru.struct_name != NULL && funcDefType->u.stru.structure != NULL)
+			{
+				addStructPoint(funcDefType, pDec->lineno);
+			}
+			addVarPoint(funcDef, pDec->lineno);
+			
+			nextDef->t.funcDef_tail = funcDef;
+			funcDef->t.funcDef_tail = NULL;
+	
+			errorType = addFuncTable(funcPoint);
+		}
+		else if(varListNode->exp_num == 2)
+		{
+			expnode *pDec = varListNode->son_node[0];
+			type *funcDefType = SpecifierAnalyzer(pDec->son_node[0]);
+			var *funcDef = VarDecAnalyzer(funcDefType, pDec->son_node[1]);
+	
+			if(funcDefType->kind == structure && funcDefType->u.stru.struct_name != NULL && funcDefType->u.stru.structure != NULL)
+			{
+				addStructPoint(funcDefType, pDec->lineno);
+			}
+			addVarPoint(funcDef, pDec->lineno);
+			funcD->funcVarDef = funcDef;
+			funcDef->t.funcDef_tail = NULL;
+			errorType = addFuncTable(funcPoint);
+		}
+	}
+	switch(errorType)
+	{
+		case 0:
+			{
+				insertError(18, funDecNode->lineno, funcD->name);
+				break;
+			}
+		case 1:
+			{
+				insertError(4, funDecNode->lineno, NULL);
+				break;
+			}
+		case 2:
+			{
+				insertError(19, funDecNode->lineno, NULL);
+				break;
+			}
+	}
+	return;
+}
 // analyze a ExtDecList node(sub-tree) and insert the points into the hash table
 void ExtDecAnalyzer(type *varDefType, expnode *extDecNode)
 {
@@ -114,6 +905,14 @@ var * VarDecAnalyzer(type *varDefType, expnode *varDecNode)
 		return thisVar;
 	}
 	thisVar = malloc(sizeof(var));
+	if(varDefType->kind == structure && varDefType->u.stru.structure == NULL)
+	{
+		point *structPoint = findPoint(varDefType->u.stru.struct_name, 3, nowLayerNum);
+		if(structPoint == NULL)
+		{
+			insertError(17, varDecNode->lineno, NULL);
+		}
+	}
 	switch(varDecNode->exp_num)
 	{
 		case 1:
@@ -157,7 +956,6 @@ type * SpecifierAnalyzer(expnode *specifier)
 		thisType = NULL;
 		return thisType;
 	}
-//	printf("here 2\n");
 	thisType = malloc(sizeof(type));
 	if(specifier->exp_num == 1)// means type: int or float
 	{
@@ -169,7 +967,6 @@ type * SpecifierAnalyzer(expnode *specifier)
 	else if(specifier->exp_num == 2)// means it is a struct
 	{
 		expnode *structSpecType = specifier->son_node[0];
-//		printf("here 3\n");
 		switch(structSpecType->exp_num)
 		{
 			case 1:
@@ -190,7 +987,6 @@ type * SpecifierAnalyzer(expnode *specifier)
 						thisType->u.stru.struct_name = NULL;
 					}
 					thisType->u.stru.structure = NULL;
-			//		printf("%s\n", thisType->u.stru.struct_name);
 					while(DefListType->exp_num == 1)
 					{
 						expnode *DefType = DefListType->son_node[0];
@@ -236,7 +1032,7 @@ void  DefAnalyzer(expnode *def, int usage, type *structType)
 		point *isDec = findPoint(defType->u.stru.struct_name, 3, nowLayerNum);
 		if(isDec == NULL)
 		{
-			insertError(17, def->lineno);
+			insertError(17, def->lineno, NULL);
 			return;
 		}
 	}
@@ -263,14 +1059,14 @@ void  DefAnalyzer(expnode *def, int usage, type *structType)
 		{
 			if(strcmp(structTail->name, defType->u.stru.struct_name) == 0)
 			{
-				insertError(15, def->lineno);
+				insertError(15, def->lineno, NULL);
 				return;
 			}
 			structTail = structTail->t.struct_tail;
 		}
 		if(strcmp(structTail->name, defType->u.stru.struct_name) == 0)
 		{
-			insertError(15, def->lineno);
+			insertError(15, def->lineno, NULL);
 			return;
 		}
 	}
@@ -287,17 +1083,39 @@ void  DefAnalyzer(expnode *def, int usage, type *structType)
 		{
 			case 0:
 				{
-					varList = VarDecAnalyzer(defType, varDec);
-					varList->t.struct_tail = NULL;
-					insertStructTail(varList, structType, varDec->lineno);
-					
+					if(dec->exp_num == 1)
+					{
+						varList = VarDecAnalyzer(defType, varDec);
+						varList->t.struct_tail = NULL;
+						insertStructTail(varList, structType, varDec->lineno);
+					}
+					else if(dec->exp_num == 2)
+					{
+						insertError(15, dec->lineno, NULL);
+						varList = VarDecAnalyzer(defType, varDec);
+						varList->t.struct_tail = NULL;
+						insertStructTail(varList, structType, varDec->lineno);
+					}
 					// dec->exp_num == 2 have = and exp, do it later
 					break;
 				}
 			case 1:
 				{
-					varList = VarDecAnalyzer(defType, varDec);
-					addVarPoint(varList, varDec->lineno);
+					if(dec->exp_num == 1)
+					{
+						varList = VarDecAnalyzer(defType, varDec);
+						addVarPoint(varList, varDec->lineno);	
+					}
+					else if(dec->exp_num == 2)
+					{
+						varList = VarDecAnalyzer(defType, varDec);
+						addVarPoint(varList, varDec->lineno);
+						type *expType = ExpAnalyzer(dec->son_node[2], 0);
+						if((expType != NULL && varList != NULL) && isSameType(expType, varList->var_type, nowLayerNum) == 1)
+						{
+							insertError(5, dec->lineno, NULL);
+						}
+					}
 					
 					//dec->exp_num == 2 have = and exp, do it later
 					break;
@@ -320,17 +1138,40 @@ void  DefAnalyzer(expnode *def, int usage, type *structType)
 	{
 		case 0:
 			{
-				varList = VarDecAnalyzer(defType, varDec);
-				varList->t.struct_tail = NULL;
-				insertStructTail(varList, structType, varDec->lineno);
+				if(dec->exp_num == 1)
+				{
+					varList = VarDecAnalyzer(defType, varDec);
+					varList->t.struct_tail = NULL;
+					insertStructTail(varList, structType, varDec->lineno);
+				}
+				else if(dec->exp_num == 2)
+				{
+					insertError(15, dec->lineno, NULL);
+					varList = VarDecAnalyzer(defType, varDec);
+					varList->t.struct_tail = NULL;
+					insertStructTail(varList, structType, varDec->lineno);
+				}
 				
 				// dec->exp_num == 2 is wrong here, do it later	
 				break;
 			}
 		case 1:
 			{
-				varList = VarDecAnalyzer(defType, varDec);
-				addVarPoint(varList, varDec->lineno);
+				if(dec->exp_num == 1)
+				{
+					varList = VarDecAnalyzer(defType, varDec);
+					addVarPoint(varList, varDec->lineno);	
+				}
+				else if(dec->exp_num == 2)
+				{
+					varList = VarDecAnalyzer(defType, varDec);
+					addVarPoint(varList, varDec->lineno);
+					type *expType = ExpAnalyzer(dec->son_node[2], 0);
+					if((expType != NULL && varList != NULL) && isSameType(expType, varList->var_type, nowLayerNum) == 1)
+					{
+						insertError(5, dec->lineno, NULL);
+					}
+				}
 				
 				// same
 				break;
@@ -360,13 +1201,13 @@ void insertStructTail(var *varTail, type *structType, int lineno)
 		{
 			if(strcmp(structTail->var_type->u.stru.struct_name, varTail->name) == 0)
 			{
-				insertError(15, lineno);
+				insertError(15, lineno, NULL);
 				return;
 			}
 		}
 		if(strcmp(structTail->name, varTail->name) == 0)
 		{
-			insertError(15, lineno);
+			insertError(15, lineno, NULL);
 			return;
 		}
 		structTail = structTail->t.struct_tail;
@@ -375,13 +1216,13 @@ void insertStructTail(var *varTail, type *structType, int lineno)
 	{
 		if(strcmp(structTail->var_type->u.stru.struct_name, varTail->name) == 0)
 		{
-			insertError(15, lineno);
+			insertError(15, lineno, NULL);
 			return;
 		}
 	}
 	if(strcmp(structTail->name, varTail->name) == 0)
 	{
-		insertError(15, lineno);
+		insertError(15, lineno, NULL);
 		return;
 	}
 	structTail->t.struct_tail = varTail;
@@ -411,7 +1252,7 @@ void addVarPoint(var *varDef, int lineno)
 			}
 		case 1:
 			{
-				insertError(3, lineno);
+				insertError(3, lineno, NULL);
 				break;
 			}
 		case 2:
@@ -456,7 +1297,7 @@ void addStructPoint(type *structDec, int lineno)
 			}
 		case 2:
 			{
-				insertError(16, lineno);
+				insertError(16, lineno, NULL);
 				break;
 			}
 		default:
@@ -467,12 +1308,21 @@ void addStructPoint(type *structDec, int lineno)
 	}
 }
 // insert a error into a error list
-void insertError(int errorType, int lineno)
+void insertError(int errorType, int lineno, char *func_decName)
 {
 	errorNode *ERROR;
 	ERROR = malloc(sizeof(errorNode));
 	ERROR->errorType = errorType;
 	ERROR->lineno = lineno;
+	if(func_decName == NULL)
+	{
+		ERROR->func_decName = NULL;
+	}
+	else
+	{
+		ERROR->func_decName = malloc(strlen(func_decName) + 1);
+		strcpy(ERROR->func_decName, func_decName);
+	}
 	ERROR->nextErrorNode = NULL;
 	errorNode *errorNext;
 	errorNext = semErrorList;
@@ -494,6 +1344,15 @@ void printSemError()
 	errorNext = semErrorList;
 	while(errorNext != NULL)
 	{
+	 	if(errorNext->func_decName != NULL)
+		{
+			point *funcDefPoint = findPoint(errorNext->func_decName, 1, 0);
+			if(funcDefPoint != NULL)
+			{
+				errorNext = errorNext->nextErrorNode;
+				continue;
+			}
+		}
 		printf("Error type %d at line %d\n", errorNext->errorType, errorNext->lineno);
 		errorNext = errorNext->nextErrorNode;
 	}

@@ -23,7 +23,7 @@ int main(int argc, char** argv){
 	//extern FILE* yydebug; 
 	//yydebug = 1; 
 	yyparse();
-	PrintTree();
+	//PrintTree();
 	SemanticAnalyze();
 	printTestError();
 	return 0;
