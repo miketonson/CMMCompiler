@@ -987,12 +987,16 @@ type * SpecifierAnalyzer(expnode *specifier)
 						thisType->u.stru.struct_name = NULL;
 					}
 					thisType->u.stru.structure = NULL;
+					nowLayerNum++;
+					pushLayerStack(nowLayerNum);
 					while(DefListType->exp_num == 1)
 					{
 						expnode *DefType = DefListType->son_node[0];
 						DefAnalyzer(DefType, 0, thisType);
 						DefListType = DefListType->son_node[1];
 					}
+					pullLayerStack();
+					nowLayerNum--;
 					return thisType;
 					break;
 				}
@@ -1035,12 +1039,16 @@ void  DefAnalyzer(expnode *def, int usage, type *structType)
 			insertError(17, def->lineno, NULL);
 			return;
 		}
+		if(usage == 0)
+		{
+			defType = isDec->p.struct_decPoint.struct_decP;
+		}
 	}
 	/*
 	 * if the specifier is a struct and have a name
 	 * and the usage is for Compst but not struct
 	 * then the struct dec should put into the hash table*/
-	if(usage == 1 && (defType->kind == structure && defType->u.stru.struct_name !=NULL && defType->u.stru.structure != NULL))
+	else if(defType->kind == structure && defType->u.stru.struct_name !=NULL && defType->u.stru.structure != NULL)
 	{
 		addStructPoint(defType, def->son_node[0]->lineno);
 	}
@@ -1055,7 +1063,7 @@ void  DefAnalyzer(expnode *def, int usage, type *structType)
 	{
 		var *structTail;
 		structTail = structType->u.stru.structure;
-		while(structTail != NULL && structTail->t.struct_tail != NULL)
+		while(structTail != NULL)
 		{
 			if(strcmp(structTail->name, defType->u.stru.struct_name) == 0)
 			{
@@ -1063,11 +1071,6 @@ void  DefAnalyzer(expnode *def, int usage, type *structType)
 				return;
 			}
 			structTail = structTail->t.struct_tail;
-		}
-		if(strcmp(structTail->name, defType->u.stru.struct_name) == 0)
-		{
-			insertError(15, def->lineno, NULL);
-			return;
 		}
 	}
 	expnode *decList;

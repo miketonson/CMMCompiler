@@ -267,7 +267,7 @@ int isSameType(type *firType, type *secType, int nowLayerNum)
 		case array:
 			{
 				int isNext = isSameType(firType->u.array.elem, secType->u.array.elem, nowLayerNum);
-				if(isNext == 0 && firType->u.array.size == secType->u.array.size)
+				if(isNext == 0 /*&& firType->u.array.size == secType->u.array.size*/)
 				{
 					return 0; // same array type
 				}
@@ -285,7 +285,7 @@ int isSameType(type *firType, type *secType, int nowLayerNum)
 				}
 				var *firTail = firType->u.stru.structure;
 				var *secTail = secType->u.stru.structure;
-				if(firTail == NULL && secTail == NULL)
+				if(firTail == NULL || secTail == NULL)
 				{
 					char *firName = firType->u.stru.struct_name;
 					char *secName = secType->u.stru.struct_name;
