@@ -1,4 +1,6 @@
-.c~
-.h~
-.y~
-.l~
+*.c~
+*.h~
+*.y~
+*.l~
+*.cmm~
+compiler1/makefile~
