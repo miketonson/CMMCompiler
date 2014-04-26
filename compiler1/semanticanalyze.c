@@ -1310,7 +1310,29 @@ void printSemError()
 				continue;
 			}
 		}
-		printf("Error type %d at line %d\n", errorNext->errorType, errorNext->lineno);
+		printf("Error type %d at line %d : ", errorNext->errorType, errorNext->lineno);
+		switch(errorNext->errorType)
+		{
+			case 1: printf("Undefined variable\n");break;
+			case 2: printf("Undefined function\n");break;
+			case 3: printf("Redefined variable\n");break;
+			case 4: printf("Redefined function\n");break;
+			case 5: printf("Type mismatched\n");break;
+			case 6: printf("The left-hand side of an assignment must be a variable\n");break;
+			case 7: printf("Operands type mismatched\n");break;
+			case 8: printf("The return type mismatched\n");break;
+			case 9: printf("The method is not applicable for the arguments\n");break;
+			case 10: printf("Variable must be an array\n");break;
+			case 11: printf("Variable must be a function\n");break;
+			case 12: printf("Operands type mistaken\n");break;
+			case 13: printf("Illegal use of “.”\n");break;
+			case 14: printf("Un-existed field\n");break;
+			case 15: printf("Redefined field\n");break;
+			case 16: printf("Duplicated name\n");break;
+			case 17: printf("Undefined struct\n");break;
+			case 18: printf("Undefined function\n");break;
+			case 19: printf("Inconsistent declaration of function\n");break;
+		}
 		errorNext = errorNext->nextErrorNode;
 	}
 	return;
