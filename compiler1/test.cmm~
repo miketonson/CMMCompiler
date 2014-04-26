@@ -1,21 +1,6 @@
-struct a
+int a;
+int main()
 {
-	struct b
-	{
-		int a;	
-	} c;
-	struct b d;
-};
-
-struct a main()
-{
-	struct b
-	{
-		struct t
-		{
-			int u;		
-		} g;
-		struct t l[10];	
-	} p;
-	return p;
+    float a;
+    a = 0.3;
 }

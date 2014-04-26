@@ -27,52 +27,6 @@ type *nowReturnType;
 void printTestError()
 {
 	printSemError();
-	/*
-// point 1 array
-	point *point1 = findPoint("a", 2, 0);
-	printf("name: %s, type: %d, inner_type: %d\n", point1->p.var_defPoint.var_defP->name, point1->point_type, point1->p.var_defPoint.var_defP->var_type->kind);
-	type *thisType = point1->p.var_defPoint.var_defP->var_type;
-	while(thisType->kind == array)
-	{
-		printf("array: %d ", thisType->u.array.size);
-		thisType = thisType->u.array.elem;
-	}
-	printf("array_type: %d\n", thisType->kind);
-// point 2 int
-	point *point2 = findPoint("b", 2, 0);
-	printf("name: %s, type: %d, inner_type: %d\n", point2->p.var_defPoint.var_defP->name, point2->point_type, point2->p.var_defPoint.var_defP->var_type->kind);
-// point 3 struct
-	point *point3 = findPoint("test", 3, 0);
-	printf("name: %s, type: %d\n", point3->p.struct_decPoint.struct_decP->u.stru.struct_name, point3->point_type);
-	var *thisVar = point3->p.struct_decPoint.struct_decP->u.stru.structure;
-	while(thisVar != NULL)
-	{
-		printf("   name: %s, type : %d\n", thisVar->name, thisVar->var_type->kind);
-		if(thisVar->var_type->kind == array)
-		{
-			type *atype = thisVar->var_type;
-			while(atype->kind == array)
-			{
-				printf("   array: %d ", atype->u.array.size);
-				atype = atype->u.array.elem;
-			}
-			printf("array_type: %d\n", atype->kind);
-		}
-		thisVar = thisVar->t.struct_tail;
-	}
-	point *point4 = findPoint("test", 0, 0);
-	printf("name: %s, type: %d\n", point4->p.func_decPoint->name, point4->point_type);
-	var *tail = point4->p.func_decPoint->funcVarDef;
-	while(tail != NULL)
-	{
-		printf("  tail: %s, type: %d\n", tail->name, tail->var_type->kind);
-		tail = tail->t.funcDef_tail;
-	}
-	point *point5 = findPoint("a", 2, 1);
-	if(point5 == NULL)
-	{
-		printf("dfg\n");
-	}*/
 }
 
 // first time for hash table insert
