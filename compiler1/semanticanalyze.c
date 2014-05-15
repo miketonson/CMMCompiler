@@ -19,6 +19,7 @@
 #include "tree.h"
 #include "semanticlist.h"
 #include "semanticanalyze.h"
+#include "IR.h"
 
 int nowLayerNum = 0;
 type *nowReturnType;
@@ -840,12 +841,30 @@ void FunDecAnalyzer(type *funcType, expnode *funDecNode, int ftype)
 // analyze a ExtDecList node(sub-tree) and insert the points into the hash table
 void ExtDecAnalyzer(type *varDefType, expnode *extDecNode)
 {
+	var *varDec;
 	while(extDecNode->exp_num == 2)
 	{
-		addVarPoint(VarDecAnalyzer(varDefType, extDecNode->son_node[0]), extDecNode->lineno);
+		varDec = VarDecAnalyzer(varDefType, extDecNode->son_node[0]);
+		addVarPoint(varDec, extDecNode->lineno);
+
+		/* code for IR*/
+		if(varDefType->kind == structure || varDec->var_type->kind == array)
+		{
+			mem_dec(varDec);
+		}
+		/* code end*/
+		
 		extDecNode = extDecNode->son_node[2];
 	}
-	addVarPoint(VarDecAnalyzer(varDefType, extDecNode->son_node[0]), extDecNode->lineno);
+	varDec = VarDecAnalyzer(varDefType, extDecNode->son_node[0]);
+	addVarPoint(varDec, extDecNode->lineno);
+	
+	/* code for IR*/
+	if(varDefType->kind == structure || varDec->var_type->kind == array)
+	{
+		mem_dec(varDec);
+	}
+	/* code end*/
 }
 
 // analyze a VarDec node(sub-tree) and return a var struct, can do array and def
@@ -1346,6 +1365,11 @@ void SemanticAnalyze()
 	initTable();
 	initStack();
 	semErrorList = NULL;
+	
+	/* code for IR */
+	interCodeList = NULL;
+	/* code end */
+
 	expnode *NODE = RootNode;
 	int tab_num = 0;
 	if(NODE->kind == Program)

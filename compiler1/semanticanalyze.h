@@ -23,6 +23,7 @@
 #include <string.h>
 #include "tree.h"
 #include "semanticlist.h"
+#include "IR.h"
 
 extern int nowLayerNum;
 

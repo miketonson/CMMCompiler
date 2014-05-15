@@ -3,6 +3,7 @@
 #include "tree.h"
 #include "semanticlist.h"
 #include "semanticanalyze.h"
+#include "IR.h"
 /* 
  * ===  FUNCTION  ======================================================================
  *         Name:  main
@@ -26,5 +27,9 @@ int main(int argc, char** argv){
 	//PrintTree();
 	SemanticAnalyze();
 	printTestError();
+	
+	/* code for IR*/
+	printCodeList();
+	/* code end */
 	return 0;
 }

@@ -1,4 +1,4 @@
 analyze:
 	bison -d syntax.y
 	flex lexical.l
-	gcc main.c syntax.tab.c tree.c semanticlist.c semanticanalyze.c -lfl -ly -o parser
+	gcc main.c syntax.tab.c tree.c semanticlist.c semanticanalyze.c IR.c -lfl -ly -o parser
