@@ -1080,12 +1080,27 @@ void  DefAnalyzer(expnode *def, int usage, type *structType)
 					if(dec->exp_num == 1)
 					{
 						varList = VarDecAnalyzer(defType, varDec);
-						addVarPoint(varList, varDec->lineno);	
+						addVarPoint(varList, varDec->lineno);
+						
+						/* code for IR*/
+						if(varList->var_type->kind == structure || varList->var_type->kind == array)
+						{
+							mem_dec(varList);						
+						}	
+						/* code end*/
 					}
 					else if(dec->exp_num == 2)
 					{
 						varList = VarDecAnalyzer(defType, varDec);
 						addVarPoint(varList, varDec->lineno);
+
+						/* code for IR*/
+						if(varList->var_type->kind == structure || varList->var_type->kind == array)
+						{
+							mem_dec(varList);						
+						}	
+						/* code end*/
+
 						type *expType = ExpAnalyzer(dec->son_node[2], 0);
 						if((expType != NULL && varList != NULL) && isSameType(expType, varList->var_type, nowLayerNum) == 1)
 						{
@@ -1136,12 +1151,27 @@ void  DefAnalyzer(expnode *def, int usage, type *structType)
 				if(dec->exp_num == 1)
 				{
 					varList = VarDecAnalyzer(defType, varDec);
-					addVarPoint(varList, varDec->lineno);	
+					addVarPoint(varList, varDec->lineno);
+					
+					/* code for IR*/
+					if(varList->var_type->kind == structure || varList->var_type->kind == array)
+					{
+						mem_dec(varList);						
+					}	
+					/* code end*/	
 				}
 				else if(dec->exp_num == 2)
 				{
 					varList = VarDecAnalyzer(defType, varDec);
 					addVarPoint(varList, varDec->lineno);
+
+					/* code for IR*/
+					if(varList->var_type->kind == structure || varList->var_type->kind == array)
+					{
+						mem_dec(varList);						
+					}	
+					/* code end*/
+
 					type *expType = ExpAnalyzer(dec->son_node[2], 0);
 					if((expType != NULL && varList != NULL) && isSameType(expType, varList->var_type, nowLayerNum) == 1)
 					{

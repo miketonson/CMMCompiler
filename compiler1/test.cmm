@@ -1,7 +1,15 @@
 struct asd
 {
 	int a;
+	struct {int b; int c;}df[10];
 	int b[10];
 };
-struct asd first[2];
+struct asd first;
 int a[10][20];
+
+int main()
+{
+	int c[3][4];
+	struct asd gg;
+	struct asd qwe = gg;
+}

@@ -18,6 +18,8 @@
 #include <stdlib.h>
 #include "IR.h"
 
+int nowTemp = 1;
+
 void insertCodeList(InterCode *interCode)
 {
 	if(interCodeList == NULL)
@@ -36,6 +38,18 @@ void insertCodeList(InterCode *interCode)
 		interCode->prev = exCodes;
 	}
 	return;
+}
+
+Operand * new_temp()
+{
+	Operand *temp;
+	temp = malloc(sizeof(Operand));
+	temp->kind = TEMPo;
+	temp->temp_no = nowTemp;
+
+	nowTemp++;
+
+	return temp;
 }
 
 void mem_dec(var *varPoint)
@@ -103,6 +117,190 @@ int dec_sizeCal(type *varType)
 	return size;
 }
 
+void translate_EXP(expnode *EXP, Operand *place)
+{
+	switch(EXP->exp_num)
+	{
+		case 17: /* for INT */
+			{
+				Operand *con;
+				con = malloc(sizeof(Operand));
+				con->kind = CONSTo;
+				con->u.const_value = EXP->int_vaule;
+
+				InterCode *conCode;
+				conCode = malloc(sizeof(InterCode));
+				conCode->kind = ASSIGNc;
+				conCode->u.assign.left = place;
+				conCode->u.assign.right = con;
+
+				insertCodeList(conCode);
+				break;
+			}
+		case 16: /* for ID */
+			{
+				Operand *var;
+				var = malloc(sizeof(Operand));
+				var->kind = VARo;
+				strcpy(var->u.var_name, EXP->id_vaule);
+
+				InterCode *varCode;
+				varCode = malloc(sizeof(InterCode));
+				varCode->kind = ASSIGNc;
+				varCode->u.assign.left = place;
+				varCode->u.assign.right = var;
+
+				insertCodeList(varCode);
+				break;
+			}
+		case 1: /* for ASSIGN */
+			{
+				expnode *left = EXP->son_node[0];
+				switch(left->exp_num)
+				{
+					case 16: /* for ID */
+						{
+							Operand *t1;
+							t1 = new_temp();
+
+							Operand *var;
+							var = malloc(sizeof(Operand));
+							var->kind = VARo;
+							strcpy(var->u.var_name, left->id_vaule);
+
+							tanslate_EXP(EXP->son_node[2], t1);
+
+							InterCode *code1;
+							InterCode *code2;
+							code1 = malloc(sizeof(InterCode));
+							code2 = malloc(sizeof(InterCode));
+							code1->kind = ASSIGNc;
+							code2->kind = ASSIGNc;
+							code1->u.assign.left = var;
+							code1->u.assign.right = t1;
+							code2->u.assign.left = place;
+							code2->u.assigh.right = var;
+
+							insertCodeList(code1);
+							insertCodeList(code2);
+							break;
+						}
+					default:
+						{
+							printf("ERROR: not a assign left side type\n");
+							break;
+						}
+				}
+				break;
+			}
+		case 5: /* for ADD */
+		case 6: /* for SUB */
+		case 7: /* for MUL */
+		case 8: /* for DIV */
+			{
+				Operand *t1;
+				Operand *t2;
+				t1 = new_temp();
+				t2 = new_temp();
+
+				translate_EXP(EXP->son_node[0], t1);
+				translate_EXP(EXP->son_node[2], t2);
+
+				InterCode *code3;
+				code3 = malloc(sizeof(InterCode));
+				switch(EXP->exp_num)
+				{
+					case 5:
+						code3->kind = ADDc; break;
+					case 6:
+						code3->kind = SUBc; break;
+					case 7:
+						code3->kind = MULc; break;
+					case 8:
+						code3->kind = DIVc; break;
+					default:
+						break;
+				}
+				code3->u.binop.result = place;
+				code3->u.binop.op1 = t1;
+				code3->u.binop.op2 = t2;
+
+				insertCodeList(code3);
+				break;
+			}
+		case 10: /* for MINUS EXP */
+			{
+				Operand *t1;
+				t1 = new_temp();
+
+				translate_EXP(EXP->son_node[1], t1);
+
+				InterCode *code2;
+				code2 = malloc(sizeof(InterCode));
+				code2->kind = SUBc;
+				Operand *zero;
+				zero = malloc(sizeof(Operand));
+				zero->kind = CONSTo;
+				zero->u.const_value = 0;
+				code2->u.binop.result = place;
+				code2->u.op1 = zero;
+				code2->u.op2 = t1;
+
+				insertCodeList(code2);
+				break;
+			}
+	}
+}
+
+void translate_STMT(expnode *STMT)
+{
+	switch(STMT->exp_num)
+	{
+		case 1: /* for EXP SEMI */
+			{
+				translate_EXP(STMT->son_node[0], NULL);
+				break;
+			}
+		default:
+			{
+				printf("ERROR: wrong stmt type\n");
+			}
+	}
+}
+
+char * printOperand(Operand *op)
+{
+	char *print;
+	switch(op->kind)
+	{
+		case VARo:
+			{
+				strcpy(print, op->u.var_name);
+				break;
+			}
+		case CONSTo:
+			{
+				char buffer[20] = { 0 };
+				sprintf(buffer, "#%d", op->u.const_value);
+				strcpy(print, buffer);
+				break;
+			}
+		case TEMPo:
+			{
+				char buffer[20] = { 0 };
+				sprintf(buffer, "t%d", op->u.temp_no);
+				strcpy(print, buffer);
+				break;
+			}
+		default:
+			{
+				printf("ERROR: wrong operand kind\n");
+				break;
+			}
+	}
+	return print;
+}
+
 void printCodeList()
 {
 	if(interCodeList == NULL)
@@ -119,6 +317,28 @@ void printCodeList()
 				{
 					printf("DEC %s [%d]\n", printCode->u.dec.var->u.var_name, printCode->u.dec.size);
 					break;
+				}
+			case ASSIGNc:
+				{
+					if(printCode->u.assign.left != NULL)
+					{
+						char *left = printOperand(printCode->u.assign.left);
+						char *right = printOperand(printCode->u.assign.right);
+
+						printf("%s := %s", left, right);
+					}
+					break;
+				}
+			case ADDc:
+			case SUBc:
+			case MULc:
+			case DIVc:
+				{
+					if(printCode->u.binop.result == NULL)
+					{
+						break;
+					}
+
 				}
 			default:
 				{
