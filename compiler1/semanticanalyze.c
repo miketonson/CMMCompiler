@@ -146,6 +146,14 @@ void StmtAnalyzer(expnode *stmtNode)
 			{
 				type *expType;
 				expType = ExpAnalyzer(stmtNode->son_node[0], 1);
+				
+				/* code for IR*/
+				if(expType != NULL)
+				{
+					translate_STMT(stmtNode);				
+				}
+				/* code end*/
+				
 				break;
 			}
 		case 2: // compSt
@@ -163,6 +171,14 @@ void StmtAnalyzer(expnode *stmtNode)
 				{
 					insertError(8, stmtNode->lineno, NULL);
 				}
+				
+				/* code for IR*/
+				if(expType != NULL)
+				{
+					translate_STMT(stmtNode);				
+				}
+				/* code end*/
+
 				break;
 			}
 		case 4: // IF
@@ -171,7 +187,32 @@ void StmtAnalyzer(expnode *stmtNode)
 				expType = ExpAnalyzer(stmtNode->son_node[2], 2);
 				nowLayerNum++;
 				pushLayerStack(nowLayerNum);
+				
+				/* code for IR*/
+				Operand *label1;//
+				Operand *label2;//
+				label1 = new_label();//
+				label2 = new_label();//
+
+				translate_COND(stmtNode->son_node[2], label1, label2);//
+
+				InterCode *code1;//
+				InterCode *code2;//
+				code1 = malloc(sizeof(InterCode));//
+				code2 = malloc(sizeof(InterCode));//
+				code1->kind = LABELc;//
+				code2->kind = LABELc;//
+				code1->u.op = label1;//
+				code2->u.op = label2;//
+				insertCodeList(code1);//
+				/* code end*/
+
 				StmtAnalyzer(stmtNode->son_node[4]);
+				
+				/* code for IR*/
+				insertCodeList(code2);//
+				/* code end*/
+
 				pullLayerStack();
 				nowLayerNum--;
 				break;
@@ -182,12 +223,57 @@ void StmtAnalyzer(expnode *stmtNode)
 				expType = ExpAnalyzer(stmtNode->son_node[2], 2);
 				nowLayerNum++;
 				pushLayerStack(nowLayerNum);
+				
+				/* code for IR*/
+				Operand *label1;//
+				Operand *label2;//
+				Operand *label3;//
+				label1 = new_label();//
+				label2 = new_label();//
+				label3 = new_label();//
+				
+				translate_COND(stmtNode->son_node[2], label1, label2);//
+
+				InterCode *code1;//
+				InterCode *code2;//
+				InterCode *code3;//
+				code1 = malloc(sizeof(InterCode));//
+				code2 = malloc(sizeof(InterCode));//
+				code3 = malloc(sizeof(InterCode));//
+				code1->kind = LABELc;//
+				code2->kind = LABELc;//
+				code3->kind = LABELc;//
+				code1->u.op = label1;//
+				code2->u.op = label2;//
+				code3->u.op = label3;//
+				insertCodeList(code1);//
+				/* code end*/
+
 				StmtAnalyzer(stmtNode->son_node[4]);
+				
+				/* code for IR*/
+				InterCode *code4;//
+				code4 = malloc(sizeof(InterCode));//
+				code4->kind = GOTOc;//
+				code4->u.op = label3;//
+				insertCodeList(code4);
+				/* code end*/
+
 				pullLayerStack();
 				nowLayerNum--;
 				nowLayerNum++;
 				pushLayerStack(nowLayerNum);
+
+				/* code for IR*/
+				insertCodeList(code2);//
+				/* code end*/
+
 				StmtAnalyzer(stmtNode->son_node[6]);
+
+				/* code for IR*/
+				insertCodeList(code3);//
+				/* code end*/
+
 				pullLayerStack();
 				nowLayerNum--;
 				break;
@@ -198,7 +284,45 @@ void StmtAnalyzer(expnode *stmtNode)
 				expType = ExpAnalyzer(stmtNode->son_node[2], 2);
 				nowLayerNum++;
 				pushLayerStack(nowLayerNum);
+				
+				/* code for IR*/
+				Operand *label1;//
+				Operand *label2;//
+				Operand *label3;//
+				label1 = new_label();//
+				label2 = new_label();//
+				label3 = new_label();//
+				
+				InterCode *code1;//
+				code1 = malloc(sizeof(InterCode));//
+				code1->kind = LABELc;//
+				code1->u.op = label1;//
+				insertCodeList(code1);//
+			
+				translate_COND(stmtNode->son_node[2], label2, label3);//
+
+				InterCode *code2;//
+				InterCode *code3;//
+				InterCode *code4;//
+				code2 = malloc(sizeof(InterCode));//
+				code3 = malloc(sizeof(InterCode));//
+				code4 = malloc(sizeof(InterCode));//
+				code2->kind = LABELc;//
+				code3->kind = LABELc;//
+				code4->kind = GOTOc;//
+				code2->u.op = label2;//
+				code3->u.op = label3;//
+				code4->u.op = label1;//
+				insertCodeList(code2);//
+				/* code end*/
+				
 				StmtAnalyzer(stmtNode->son_node[4]);
+				
+				/* code for IR*/
+				insertCodeList(code4);//
+				insertCodeList(code3);//
+				/* code end*/
+
 				pullLayerStack();
 				nowLayerNum--;
 				break;
@@ -1404,7 +1528,7 @@ void SemanticAnalyze()
 	int tab_num = 0;
 	if(NODE->kind == Program)
 	{
-		printf("Start Semantic Analyze\n");
+		//printf("Start Semantic Analyze\n");
 		nowLayerNum = 0;
 		pushLayerStack(nowLayerNum);
 		NODE->search_num = 1;

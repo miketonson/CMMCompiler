@@ -26,6 +26,7 @@
 #include "semanticanalyze.h"
 
 extern int nowTemp;
+extern int nowLabel;
 
 typedef struct Operand_ Operand;
 typedef struct InterCode_ InterCode;
@@ -77,8 +78,11 @@ struct InterCode_
 InterCode *interCodeList;
 
 void insertCodeList(InterCode *interCode);
-Operand * newTemp();
+Operand * new_temp();
+Operand * new_label();
 void mem_dec(var *varPoint);
 void translate_EXP(expnode *EXP, Operand *place);
+void translate_STMT(expnode *STMT);
+void translate_COND(expnode *EXP, Operand *label_true, Operand *label_false);
 void printCodeList();
 #endif
