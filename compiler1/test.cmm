@@ -1,19 +1,14 @@
+int asd(int c, int d)
+{
+	int a;
+	a = 0;
+	return a;
+}
 int main()
 {
-	int a,b,c;
-	a = 5;
-	c = -4;
-	if(a > c)
-	{
-		int r[10];
-		b = 2;
-		a = b + c;
-	}
-	else
-	{
-		int r[20][10];
-		a = -89;
-		b = a + c;
-	}
-	return a;
+	int b,v,f;
+	v = 0;
+	f = 1;
+	b = asd(v,f);
+	return b;
 }

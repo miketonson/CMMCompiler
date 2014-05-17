@@ -38,6 +38,44 @@ void initTable()
 	int i;
 	for(i=0; i<table_size; i++)
 		hashTable[i] = NULL;
+
+	point *write;
+	point *read;
+	write = malloc(sizeof(point));
+	read = malloc(sizeof(point));
+	write->next_point = NULL;
+	write->former_point = NULL;
+	read->next_point = NULL;
+	read->former_point = NULL;
+
+	read->point_type = func_def;
+	read->p.func_defPoint = malloc(sizeof(funcDef));
+	write->point_type = func_def;
+	write->p.func_defPoint = malloc(sizeof(funcDef));
+
+	type *returnType;
+	returnType = malloc(sizeof(type));
+	returnType->kind = basic;
+	returnType->u.basic = 0;
+
+	read->p.func_defPoint->returnType = returnType;
+	write->p.func_defPoint->returnType = returnType;
+	
+	read->p.func_defPoint->name = "read";
+	write->p.func_defPoint->name = "write";
+
+	read->p.func_defPoint->funcVarDef = NULL;
+	var *varDef;
+	varDef = malloc(sizeof(var));
+	varDef->name = "i";
+	varDef->var_type = returnType;
+	varDef->t.funcDef_tail = NULL;
+	write->p.func_defPoint->funcVarDef = varDef;
+
+	unsigned int write_num = hash_pjw("write");
+	unsigned int read_num = hash_pjw("read");
+	hashTable[write_num] = write;
+	hashTable[read_num] = read;	
 }
 // init layer stack
 void initStack()

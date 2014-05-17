@@ -282,6 +282,8 @@ void translate_EXP(expnode *EXP, Operand *place)
 
 				InterCode *code0;
 				code0 = malloc(sizeof(InterCode));
+				code0->prev = NULL;
+				code0->next = NULL;
 				code0->kind = ASSIGNc;
 				code0->u.assign.left = place;
 				Operand *number0;
@@ -297,6 +299,10 @@ void translate_EXP(expnode *EXP, Operand *place)
 				InterCode *code2;
 				code1 = malloc(sizeof(InterCode));
 				code2 = malloc(sizeof(InterCode));
+				code1->prev = NULL;
+				code1->next = NULL;
+				code2->prev = NULL;
+				code2->next = NULL;
 				code1->kind = LABELc;
 				code1->u.op = label1;
 				code2->kind = ASSIGNc;
@@ -311,13 +317,119 @@ void translate_EXP(expnode *EXP, Operand *place)
 
 				InterCode *code3;
 				code3 = malloc(sizeof(InterCode));
+				code3->prev = NULL;
+				code3->next = NULL;
 				code3->kind = LABELc;
 				code3->u.op = label2;
 				insertCodeList(code3);
 
 				break;
 			}
+		case 13: /* for ID LP RP */
+			{
+				Operand *func;
+				func = malloc(sizeof(Operand));
+				func->kind = FUNCo;
+				func->u.func_name = malloc(strlen(EXP->son_node[0]->id_vaule) + 1);
+				strcpy(func->u.func_name, EXP->son_node[0]->id_vaule);
+
+				InterCode *code1;
+				code1 = malloc(sizeof(InterCode));
+				code1->prev = NULL;
+				code1->next = NULL;
+				if(strcmp(func->u.func_name, "read") == 0)
+				{
+					code1->kind = READc;
+					code1->u.op = place;
+				}
+				else
+				{
+					code1->kind = CALL_FUNCc;
+					code1->u.call_func.var = place;
+					code1->u.call_func.func = func;
+				}
+				insertCodeList(code1);
+				break;
+			}
+		case 12: /* for ID LP ARG RP */
+			{
+				Operand *func;
+				func = malloc(sizeof(Operand));
+				func->kind = FUNCo;
+				func->u.func_name = malloc(strlen(EXP->son_node[0]->id_vaule) + 1);
+				strcpy(func->u.func_name, EXP->son_node[0]->id_vaule);
+
+				Operand *argList;
+				argList = NULL;
+				argList = translate_ARG(EXP->son_node[2], argList);
+				
+				InterCode *code1;
+				code1 = malloc(sizeof(InterCode));
+				code1->prev = NULL;
+				code1->next = NULL;
+				if(strcmp(func->u.func_name, "write") == 0)
+				{
+					code1->kind = WRITEc;
+					code1->u.op = argList;
+				}
+				else
+				{
+					Operand *temp;
+					temp = argList;
+					while(temp != NULL)
+					{
+						printf("test1\n");
+						InterCode *code2;
+						code2 = malloc(sizeof(InterCode));
+						code2->prev = NULL;
+						code2->next = NULL;
+						code2->kind = ARGc;
+						code2->u.op = temp;
+						insertCodeList(code2);
+
+						temp = temp->nextArg;
+					}
+					code1->kind = CALL_FUNCc;
+					code1->u.call_func.var = place;
+					code1->u.call_func.func = func;
+				}
+				insertCodeList(code1);
+
+				break;
+			}
 	}
+}
+
+Operand * translate_ARG(expnode *ARG, Operand *argList)
+{
+	switch(ARG->exp_num)
+	{
+		case 2: /* for EXP */
+			{
+				Operand *t1;
+				t1 = new_temp();
+				translate_EXP(ARG->son_node[0], t1);
+				t1->nextArg = argList;
+				argList = t1;
+				break;
+			}
+		case 1: /* for EXP COMMA ARG */
+			{
+				Operand *t1;
+				t1 = new_temp();
+				translate_EXP(ARG->son_node[0], t1);
+				t1->nextArg = argList;
+				argList = t1;
+				argList = translate_ARG(ARG->son_node[2], argList);
+				break;
+			}
+		default:
+			{
+				printf("ERROR: wrong arg type\n");
+				break;
+			}
+	}
+	return argList;
 }
 
 void translate_STMT(expnode *STMT)
@@ -342,6 +454,8 @@ void translate_STMT(expnode *STMT)
 
 				InterCode *code1;
 				code1 = malloc(sizeof(InterCode));
+				code1->prev = NULL;
+				code1->next = NULL;
 				code1->kind = RETURNc;
 				code1->u.op = t1;
 				insertCodeList(code1);
@@ -381,6 +495,10 @@ void translate_COND(expnode *EXP, Operand *label_true, Operand *label_false)
 				InterCode *code2;
 				code1 = malloc(sizeof(InterCode));
 				code2 = malloc(sizeof(InterCode));
+				code1->prev = NULL;
+				code1->next = NULL;
+				code2->prev = NULL;
+				code2->next = NULL;
 
 				code1->kind = IF_GOTOc;
 				code1->u.if_goto.left = t1;
@@ -409,6 +527,8 @@ void translate_COND(expnode *EXP, Operand *label_true, Operand *label_false)
 
 				InterCode *code1;
 				code1 = malloc(sizeof(InterCode));
+				code1->prev = NULL;
+				code1->next = NULL;
 				code1->kind = LABELc;
 				code1->u.op = label1;
 				insertCodeList(code1);
@@ -426,6 +546,8 @@ void translate_COND(expnode *EXP, Operand *label_true, Operand *label_false)
 
 				InterCode *code1;
 				code1 = malloc(sizeof(InterCode));
+				code1->prev = NULL;
+				code1->next = NULL;
 				code1->kind = LABELc;
 				code1->u.op = label1;
 				insertCodeList(code1);
@@ -445,6 +567,10 @@ void translate_COND(expnode *EXP, Operand *label_true, Operand *label_false)
 				InterCode *code2;
 				code1 = malloc(sizeof(InterCode));
 				code2 = malloc(sizeof(InterCode));
+				code1->prev = NULL;
+				code1->next = NULL;
+				code2->prev = NULL;
+				code2->next = NULL;
 
 				code1->kind = IF_GOTOc;
 				code1->u.if_goto.left = t1;
@@ -500,6 +626,12 @@ char * printOperand(Operand *op)
 				sprintf(buffer, "label%d", op->u.label_no);
 				print = malloc(strlen(buffer) + 1);
 				strcpy(print, buffer);
+				break;
+			}
+		case FUNCo:
+			{
+				print = malloc(strlen(op->u.func_name) + 1);
+				strcpy(print, op->u.func_name);
 				break;
 			}
 		default:
@@ -648,6 +780,31 @@ void printCodeList()
 				{
 					char *op = printOperand(printCode->u.op);
 					printf("RETURN %s\n", op);
+					break;
+				}
+			case ARGc:
+				{
+					char *op = printOperand(printCode->u.op);
+					printf("ARG %s\n", op);
+					break;
+				}
+			case CALL_FUNCc:
+				{
+					char *var = printOperand(printCode->u.call_func.var);
+					char *func = printOperand(printCode->u.call_func.func);
+					printf("%s := CALL %s\n", var, func);
+					break;
+				}
+			case WRITEc:
+				{
+					char *op = printOperand(printCode->u.op);
+					printf("WRITE %s\n", op);
+					break;
+				}
+			case READc:
+				{
+					char *op = printOperand(printCode->u.op);
+					printf("READ %s\n", op);
 					break;
 				}
 			default:

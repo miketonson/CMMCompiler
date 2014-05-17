@@ -21,6 +21,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <assert.h>
 #include "tree.h"
 #include "semanticlist.h"
 #include "semanticanalyze.h"
@@ -51,6 +52,7 @@ struct Operand_
 		/* for FUNC */
 		char *func_name;
 	}u;
+	Operand *nextArg;
 };
 
 struct InterCode_
@@ -82,6 +84,7 @@ Operand * new_temp();
 Operand * new_label();
 void mem_dec(var *varPoint);
 void translate_EXP(expnode *EXP, Operand *place);
+Operand * translate_ARG(expnode *ARG, Operand *argList);
 void translate_STMT(expnode *STMT);
 void translate_COND(expnode *EXP, Operand *label_true, Operand *label_false);
 void printCodeList();

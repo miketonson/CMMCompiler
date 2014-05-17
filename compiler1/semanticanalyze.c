@@ -200,6 +200,13 @@ void StmtAnalyzer(expnode *stmtNode)
 				InterCode *code2;//
 				code1 = malloc(sizeof(InterCode));//
 				code2 = malloc(sizeof(InterCode));//
+				code1->prev = NULL;
+				code1->next = NULL;
+				
+				code2->prev = NULL;
+				code2->next = NULL;
+				
+
 				code1->kind = LABELc;//
 				code2->kind = LABELc;//
 				code1->u.op = label1;//
@@ -240,6 +247,16 @@ void StmtAnalyzer(expnode *stmtNode)
 				code1 = malloc(sizeof(InterCode));//
 				code2 = malloc(sizeof(InterCode));//
 				code3 = malloc(sizeof(InterCode));//
+				code1->prev = NULL;
+				code1->next = NULL;
+				
+				code2->prev = NULL;
+				code2->next = NULL;
+				
+				code3->prev = NULL;
+				code3->next = NULL;
+				
+
 				code1->kind = LABELc;//
 				code2->kind = LABELc;//
 				code3->kind = LABELc;//
@@ -254,6 +271,9 @@ void StmtAnalyzer(expnode *stmtNode)
 				/* code for IR*/
 				InterCode *code4;//
 				code4 = malloc(sizeof(InterCode));//
+				code4->prev = NULL;
+				code4->next = NULL;
+				
 				code4->kind = GOTOc;//
 				code4->u.op = label3;//
 				insertCodeList(code4);
@@ -295,6 +315,9 @@ void StmtAnalyzer(expnode *stmtNode)
 				
 				InterCode *code1;//
 				code1 = malloc(sizeof(InterCode));//
+				code1->prev = NULL;
+				code1->next = NULL;
+				
 				code1->kind = LABELc;//
 				code1->u.op = label1;//
 				insertCodeList(code1);//
@@ -307,6 +330,16 @@ void StmtAnalyzer(expnode *stmtNode)
 				code2 = malloc(sizeof(InterCode));//
 				code3 = malloc(sizeof(InterCode));//
 				code4 = malloc(sizeof(InterCode));//
+				code2->prev = NULL;
+				code2->next = NULL;
+				
+				code3->prev = NULL;
+				code3->next = NULL;
+				
+				code4->prev = NULL;
+				code4->next = NULL;
+				
+
 				code2->kind = LABELc;//
 				code3->kind = LABELc;//
 				code4->kind = GOTOc;//
@@ -375,7 +408,7 @@ type * ExpAnalyzer(expnode *expNode, int etype)
 		case 3: // OR
 		case 4: // RELOP
 			{
-				if(etype == 2 || etype == 1)
+				if(etype == 2 || etype == 1 || etype == 0)
 				{
 					type *firType = ExpAnalyzer(expNode->son_node[0], 0);
 					type *secType = ExpAnalyzer(expNode->son_node[2], 0);
