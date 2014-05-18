@@ -204,6 +204,37 @@ void translate_EXP(expnode *EXP, Operand *place)
 							insertCodeList(code2);
 							break;
 						}
+					case 14: /* for EXP LB EXP LB */
+						{
+							Operand *t1;
+							t1 = new_temp();
+							translate_EXP(EXP->son_node[0], t1);
+
+							InterCode *tempCode;
+							tempCode = interCodeList;
+							while(tempCode->next != NULL)
+							{
+								tempCode = tempCode->next;
+							}
+							if(tempCode->kind == ASSIGNc || tempCode->u.assign.right->kind == STARo)
+							{
+								t1 = tempCode->u.assign.right;
+								tempCode = tempCode->prev;
+								tempCode->next = NULL;
+							}
+
+							Operand *t2;
+							t2 = new_temp();
+							translate_EXP(EXP->son_node[2], t2);
+
+							InterCode *code1;
+							code1 = malloc(sizeof(InterCode));
+							code1->kind = ASSIGNc;
+							code1->u.assign.left = t1;
+							code1->u.assign.right = t2;
+							insertCodeList(code1);
+							break;
+						}
 					default:
 						{
 							printf("ERROR: not a assign left side type\n");
@@ -378,7 +409,6 @@ void translate_EXP(expnode *EXP, Operand *place)
 					temp = argList;
 					while(temp != NULL)
 					{
-						printf("test1\n");
 						InterCode *code2;
 						code2 = malloc(sizeof(InterCode));
 						code2->prev = NULL;
@@ -395,6 +425,141 @@ void translate_EXP(expnode *EXP, Operand *place)
 				}
 				insertCodeList(code1);
 
+				break;
+			}
+		case 9: /* for LR EXP RP */
+			{
+				translate_EXP(EXP->son_node[1], place);
+				break;
+			}
+		case 14: /* for EXP LB EXP RB */
+			{
+				expnode *tempNode;
+				tempNode = EXP;
+				int arrayDim = 0;
+				while(tempNode->exp_num == 14)
+				{
+					arrayDim++;
+					tempNode = tempNode->son_node[0];
+				}
+				Operand *t1;// base address
+				t1 = new_temp();
+				/* first get the base address */
+				Operand *var;
+				var = malloc(sizeof(Operand));
+				if(tempNode->exp_num == 16) /* for ID */
+				{
+					point *tempPoint;
+					tempPoint = findPoint(tempNode->son_node[0]->id_vaule, 2, nowLayerNum);
+					var->kind = VARo;
+					var->u.var_name = malloc(strlen(tempNode->son_node[0]->id_vaule) + 1);
+					strcpy(var->u.var_name, tempNode->son_node[0]->id_vaule);
+
+					if(tempPoint->p.var_defPoint.var_defP->isInFuncDef == 1)
+					{
+						t1 = var;//var itself is base address
+					}
+					else
+					{
+						Operand *addr;
+						addr = malloc(sizeof(Operand));
+						addr->kind = ADDRo;
+						addr->u.addr_of = var;
+
+						InterCode *code1;
+						code1 = malloc(sizeof(InterCode));
+						code1->kind = ASSIGNc;
+						code1->u.assign.left = t1;
+						code1->u.assign.right = addr;
+						insertCodeList(code1);
+					}
+
+					Operand *t2;// offset address
+					t2 = new_temp();
+
+					InterCode *code1;
+					code1 = malloc(sizeof(InterCode));
+					code1->kind = ASSIGNc;
+					code1->u.assign.left = t2;
+					Operand *zero;
+					zero = malloc(sizeof(Operand));
+					zero->kind = CONSTo;
+					zero->u.const_value = 0;
+					code1->u.assign.right = zero;
+					insertCodeList(code1);
+
+					type *tempType = tempPoint->p.var_defPoint.var_defP->var_type;
+				
+					while(arrayDim != 0)
+					{
+						tempNode = tempNode->father_node;
+						Operand *t3;
+						t3 = new_temp();
+						translate_EXP(tempNode->son_node[2], t3);
+
+						int typeSize;
+						typeSize = dec_sizeCal(tempType->u.array.elem);
+
+						Operand *size;
+						size = malloc(sizeof(Operand));
+						size->kind = CONSTo;
+						size->u.const_value = typeSize;
+
+						InterCode *code2;
+						code2 = malloc(sizeof(InterCode));
+						code2->kind = MULc;
+						code2->u.binop.result = t3;
+						code2->u.binop.op1 = t3;
+						code2->u.binop.op2 = size;
+						insertCodeList(code2);
+
+						InterCode *code3;
+						code3 = malloc(sizeof(InterCode));
+						code3->kind = ADDc;
+						code3->u.binop.result = t2;
+						code3->u.binop.op1 = t2;
+						code3->u.binop.op2 = t3;
+						insertCodeList(code3);
+
+						arrayDim--;
+						tempType = tempType->u.array.elem;
+					}
+					/* if it is a array or struct, return a address */
+					if(tempType->kind == structure || tempType->kind == array)
+					{
+						InterCode *code2;
+						code2 = malloc(sizeof(InterCode));
+						code2->kind = ADDc;
+						code2->u.binop.result = place;
+						code2->u.binop.op1 = t1;
+						code2->u.binop.op2 = t2;
+						insertCodeList(code2);
+					}
+					/* else return the var */
+					else
+					{
+						Operand *t3;// finial address
+						t3 = new_temp();
+						InterCode *code2;
+						code2 = malloc(sizeof(InterCode));
+						code2->kind = ADDc;
+						code2->u.binop.result = t3;
+						code2->u.binop.op1 = t1;
+						code2->u.binop.op2 = t2;
+						insertCodeList(code2);
+
+						Operand *star;
+						star = malloc(sizeof(Operand));
+						star->kind = STARo;
+						star->u.addr_from = t3;
+						InterCode *code3;
+						code3 = malloc(sizeof(InterCode));
+						code3->kind = ASSIGNc;
+						code3->u.assign.left = place;
+						code3->u.assign.right = star;
+						insertCodeList(code3);
+					}
+				}
 				break;
 			}
 	}
@@ -634,6 +799,22 @@ char * printOperand(Operand *op)
 				strcpy(print, op->u.func_name);
 				break;
 			}
+		case ADDRo:
+			{
+				char buffer[20] = { 0 };
+				sprintf(buffer, "&%s", printOperand(op->u.addr_of));
+				print = malloc(strlen(buffer) + 1);
+				strcpy(print, buffer);
+				break;
+			}
+		case STARo:
+			{
+				char buffer[20] = { 0 };
+				sprintf(buffer, "*%s", printOperand(op->u.addr_from));
+				print = malloc(strlen(buffer) + 1);
+				strcpy(print, buffer);
+				break;
+			}
 		default:
 			{
 				printf("ERROR: wrong operand kind\n");
@@ -649,6 +830,9 @@ void printCodeList()
 	{
 		return;
 	}
+	FILE *code;
+	code = fopen("code.ir", "w");
+
 	InterCode *printCode;
 	printCode = interCodeList;
 	while(printCode != NULL)
@@ -657,7 +841,7 @@ void printCodeList()
 		{
 			case DECc:
 				{
-					printf("DEC %s [%d]\n", printCode->u.dec.var->u.var_name, printCode->u.dec.size);
+					fprintf(code, "DEC %s %d\n", printCode->u.dec.var->u.var_name, printCode->u.dec.size);
 					break;
 				}
 			case ASSIGNc:
@@ -667,7 +851,7 @@ void printCodeList()
 						char *left = printOperand(printCode->u.assign.left);
 						char *right = printOperand(printCode->u.assign.right);
 
-						printf("%s := %s\n", left, right);
+						fprintf(code, "%s := %s\n", left, right);
 					}
 					break;
 				}
@@ -687,22 +871,22 @@ void printCodeList()
 					{
 						case ADDc:
 							{
-								printf("%s = %s + %s\n", result, op1, op2);
+								fprintf(code, "%s := %s + %s\n", result, op1, op2);
 								break;
 							}
 						case SUBc:
 							{
-								printf("%s = %s - %s\n", result, op1, op2);
+								fprintf(code, "%s := %s - %s\n", result, op1, op2);
 								break;
 							}
 						case MULc:
 							{
-								printf("%s = %s * %s\n", result, op1, op2);
+								fprintf(code, "%s := %s * %s\n", result, op1, op2);
 								break;
 							}
 						case DIVc:
 							{
-								printf("%s = %s / %s\n", result, op1, op2);
+								fprintf(code, "%s := %s / %s\n", result, op1, op2);
 								break;
 							}
 						default:
@@ -716,13 +900,13 @@ void printCodeList()
 			case LABELc:
 				{
 					char *op = printOperand(printCode->u.op);
-					printf("LABEL %s :\n", op);
+					fprintf(code, "LABEL %s :\n", op);
 					break;
 				}
 			case GOTOc:
 				{
 					char *op = printOperand(printCode->u.op);
-					printf("GOTO %s\n", op);
+					fprintf(code, "GOTO %s\n", op);
 					break;
 				}
 			case IF_GOTOc:
@@ -735,36 +919,36 @@ void printCodeList()
 					{
 						case 1:
 							{
-								printf("IF %s > %s GOTO %s\n", left, right, label);
+								fprintf(code, "IF %s > %s GOTO %s\n", left, right, label);
 								break;
 							}
 						case 2:
 							{
 
-								printf("IF %s < %s GOTO %s\n", left, right, label);
+								fprintf(code, "IF %s < %s GOTO %s\n", left, right, label);
 								break;
 							}
 						case 3:
 							{
 
-								printf("IF %s >= %s GOTO %s\n", left, right, label);
+								fprintf(code, "IF %s >= %s GOTO %s\n", left, right, label);
 								break;
 							}
 						case 4:
 							{
 
-								printf("IF %s <= %s GOTO %s\n", left, right, label);
+								fprintf(code, "IF %s <= %s GOTO %s\n", left, right, label);
 								break;
 							}
 						case 5:
 							{
-								printf("IF %s == %s GOTO %s\n", left, right, label);
+								fprintf(code, "IF %s == %s GOTO %s\n", left, right, label);
 								break;
   
 							}
 						case 6:
 							{
-								printf("IF %s != %s GOTO %s\n", left, right, label);
+								fprintf(code, "IF %s != %s GOTO %s\n", left, right, label);
 								break;
 
 							}
@@ -779,32 +963,44 @@ void printCodeList()
 			case RETURNc:
 				{
 					char *op = printOperand(printCode->u.op);
-					printf("RETURN %s\n", op);
+					fprintf(code, "RETURN %s\n", op);
 					break;
 				}
 			case ARGc:
 				{
 					char *op = printOperand(printCode->u.op);
-					printf("ARG %s\n", op);
+					fprintf(code, "ARG %s\n", op);
 					break;
 				}
 			case CALL_FUNCc:
 				{
 					char *var = printOperand(printCode->u.call_func.var);
 					char *func = printOperand(printCode->u.call_func.func);
-					printf("%s := CALL %s\n", var, func);
+					fprintf(code, "%s := CALL %s\n", var, func);
 					break;
 				}
 			case WRITEc:
 				{
 					char *op = printOperand(printCode->u.op);
-					printf("WRITE %s\n", op);
+					fprintf(code, "WRITE %s\n", op);
 					break;
 				}
 			case READc:
 				{
 					char *op = printOperand(printCode->u.op);
-					printf("READ %s\n", op);
+					fprintf(code, "READ %s\n", op);
+					break;
+				}
+			case FUNCc:
+				{
+					char *op = printOperand(printCode->u.op);
+					fprintf(code, "FUNCTION %s :\n", op);
+					break;
+				}
+			case PARAMc:
+				{
+					char *op = printOperand(printCode->u.op);
+					fprintf(code, "PARAM %s\n", op);
 					break;
 				}
 			default:
@@ -815,4 +1011,5 @@ void printCodeList()
 		}
 		printCode = printCode->next;
 	}
+	fclose(code);
 }

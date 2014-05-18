@@ -37,6 +37,7 @@ struct Var_
 		var *struct_tail;// define the struct vars
 		var *funcDef_tail;// define the function define vars
 	} t;
+	int isInFuncDef;//0 for no, 1 for yes
 };
 struct Type_
 {

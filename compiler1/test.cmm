@@ -1,14 +1,8 @@
-int asd(int c, int d)
+int main() 
 {
-	int a;
-	a = 0;
-	return a;
+	int a[10][5];
+	a[3][4] = 234;
+	write(a[3][4]);
+	return 0;
 }
-int main()
-{
-	int b,v,f;
-	v = 0;
-	f = 1;
-	b = asd(v,f);
-	return b;
-}
+

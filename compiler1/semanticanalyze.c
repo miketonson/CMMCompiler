@@ -909,21 +909,70 @@ void FunDecAnalyzer(type *funcType, expnode *funDecNode, int ftype)
 	{
 		funcD->funcVarDef = NULL;
 		errorType = addFuncTable(funcPoint);
+
+		/* code for IR*/
+		if(errorType == 0 && ftype == 1)//
+		{//
+			Operand *func;//
+			func = malloc(sizeof(Operand));//
+			func->kind = FUNCo;//
+			func->u.func_name = malloc(strlen(funcD->name) + 1);//
+			strcpy(func->u.func_name, funcD->name);//
+			
+			InterCode *code1;//
+			code1 = malloc(sizeof(InterCode));//
+			code1->kind = FUNCc;//
+			code1->u.op = func;//
+			insertCodeList(code1);//
+		}//
+		/* code end*/
 	}
 	else
 	{
 		expnode *varListNode = funDecNode->son_node[2];
+
+		/* code for IR*/
+		Operand *pList;//
+		pList = NULL;//
+		/* code end*/
+
 		if(varListNode->exp_num == 1)
 		{
 			expnode *pDec = varListNode->son_node[0];
 			type *funcDefType = SpecifierAnalyzer(pDec->son_node[0]);
 			var *funcDef = VarDecAnalyzer(funcDefType, pDec->son_node[1]);
+			funcDef->isInFuncDef = 1;
 	
 			if(funcDefType->kind == structure && funcDefType->u.stru.struct_name != NULL && funcDefType->u.stru.structure != NULL)
 			{
 				addStructPoint(funcDefType, pDec->lineno);
 			}
 			addVarPoint(funcDef, pDec->lineno);
+			
+			/* code for IR*/
+			Operand *param;//
+			param = malloc(sizeof(Operand));//
+			param->kind = VARo;//
+			param->u.var_name = malloc(strlen(funcDef->name) + 1);//
+			strcpy(param->u.var_name, funcDef->name);//
+			param->nextArg = NULL;//
+						
+			Operand *nextA;//
+			if(pList == NULL)//
+			{//
+				pList = param;//			
+			}//
+			else//
+			{//
+				nextA = pList;//
+				while(nextA->nextArg != NULL)//
+				{//
+					nextA = nextA->nextArg;	//			
+				}//
+				nextA->nextArg = param;//			
+			}//			
+			/* code end*/
+
 			funcD->funcVarDef = funcDef;
 			var *nextDef = funcDef;
 			varListNode = varListNode->son_node[2];
@@ -933,12 +982,37 @@ void FunDecAnalyzer(type *funcType, expnode *funDecNode, int ftype)
 				pDec = varListNode->son_node[0];
 				funcDefType = SpecifierAnalyzer(pDec->son_node[0]);
 				funcDef = VarDecAnalyzer(funcDefType, pDec->son_node[1]);
+				funcDef->isInFuncDef = 1;
 	
 				if(funcDefType->kind == structure && funcDefType->u.stru.struct_name != NULL && funcDefType->u.stru.structure != NULL)
 				{
 					addStructPoint(funcDefType, pDec->lineno);
 				}
 				addVarPoint(funcDef, pDec->lineno);
+
+				/* code for IR*/
+				Operand *param;//
+				param = malloc(sizeof(Operand));//
+				param->kind = VARo;//
+				param->u.var_name = malloc(strlen(funcDef->name) + 1);//
+				strcpy(param->u.var_name, funcDef->name);//
+				param->nextArg = NULL;//
+						
+				Operand *nextA;//
+				if(pList == NULL)//
+				{//
+					pList = param;//			
+				}//
+				else//
+				{//
+					nextA = pList;//
+					while(nextA->nextArg != NULL)//
+					{//
+						nextA = nextA->nextArg;	//			
+					}//
+					nextA->nextArg = param;//			
+				}//			
+				/* code end*/
 				
 				nextDef->t.funcDef_tail = funcDef;
 				nextDef = funcDef;
@@ -947,12 +1021,37 @@ void FunDecAnalyzer(type *funcType, expnode *funDecNode, int ftype)
 			pDec = varListNode->son_node[0];
 			funcDefType = SpecifierAnalyzer(pDec->son_node[0]);
 			funcDef = VarDecAnalyzer(funcDefType, pDec->son_node[1]);
+			funcDef->isInFuncDef = 1;
 			
 			if(funcDefType->kind == structure && funcDefType->u.stru.struct_name != NULL && funcDefType->u.stru.structure != NULL)
 			{
 				addStructPoint(funcDefType, pDec->lineno);
 			}
 			addVarPoint(funcDef, pDec->lineno);
+
+			/* code for IR*/
+			Operand *param1;//
+			param1 = malloc(sizeof(Operand));//
+			param1->kind = VARo;//
+			param1->u.var_name = malloc(strlen(funcDef->name) + 1);//
+			strcpy(param1->u.var_name, funcDef->name);//
+			param1->nextArg = NULL;//
+						
+			Operand *nextA1;//
+			if(pList == NULL)//
+			{//
+				pList = param1;//			
+			}//
+			else//
+			{//
+				nextA1 = pList;//
+				while(nextA1->nextArg != NULL)//
+				{//
+					nextA1 = nextA1->nextArg;	//			
+				}//
+				nextA1->nextArg = param1;//			
+			}//			
+			/* code end*/
 			
 			nextDef->t.funcDef_tail = funcDef;
 			funcDef->t.funcDef_tail = NULL;
@@ -964,16 +1063,55 @@ void FunDecAnalyzer(type *funcType, expnode *funDecNode, int ftype)
 			expnode *pDec = varListNode->son_node[0];
 			type *funcDefType = SpecifierAnalyzer(pDec->son_node[0]);
 			var *funcDef = VarDecAnalyzer(funcDefType, pDec->son_node[1]);
+			funcDef->isInFuncDef = 1;
 	
 			if(funcDefType->kind == structure && funcDefType->u.stru.struct_name != NULL && funcDefType->u.stru.structure != NULL)
 			{
 				addStructPoint(funcDefType, pDec->lineno);
 			}
 			addVarPoint(funcDef, pDec->lineno);
+			
+			/* code for IR*/
+			Operand *param;//
+			param = malloc(sizeof(Operand));//
+			param->kind = VARo;//
+			param->u.var_name = malloc(strlen(funcDef->name) + 1);//
+			strcpy(param->u.var_name, funcDef->name);//
+			param->nextArg = NULL;//
+			pList = param;//					
+			/* code end*/
+
 			funcD->funcVarDef = funcDef;
 			funcDef->t.funcDef_tail = NULL;
 			errorType = addFuncTable(funcPoint);
 		}
+
+		/* code for IR*/
+		if(errorType == 0 && ftype == 1)
+		{
+			Operand *func;//
+			func = malloc(sizeof(Operand));//
+			func->kind = FUNCo;//
+			func->u.func_name = malloc(strlen(funcD->name) + 1);//
+			strcpy(func->u.func_name, funcD->name);//
+			
+			InterCode *code1;//
+			code1 = malloc(sizeof(InterCode));//
+			code1->kind = FUNCc;//
+			code1->u.op = func;//
+			insertCodeList(code1);//
+
+			while(pList != NULL)
+			{
+				InterCode *code2;
+				code2 = malloc(sizeof(InterCode));
+				code2->kind = PARAMc;
+				code2->u.op = pList;
+				insertCodeList(code2);
+				pList = pList->nextArg;			
+			}		
+		}
+		/* code end*/
 	}
 	switch(errorType)
 	{
@@ -1002,6 +1140,7 @@ void ExtDecAnalyzer(type *varDefType, expnode *extDecNode)
 	while(extDecNode->exp_num == 2)
 	{
 		varDec = VarDecAnalyzer(varDefType, extDecNode->son_node[0]);
+		varDec->isInFuncDef = 0;
 		addVarPoint(varDec, extDecNode->lineno);
 
 		/* code for IR*/
@@ -1014,6 +1153,7 @@ void ExtDecAnalyzer(type *varDefType, expnode *extDecNode)
 		extDecNode = extDecNode->son_node[2];
 	}
 	varDec = VarDecAnalyzer(varDefType, extDecNode->son_node[0]);
+	varDec->isInFuncDef = 0;
 	addVarPoint(varDec, extDecNode->lineno);
 	
 	/* code for IR*/
@@ -1237,6 +1377,7 @@ void  DefAnalyzer(expnode *def, int usage, type *structType)
 					if(dec->exp_num == 1)
 					{
 						varList = VarDecAnalyzer(defType, varDec);
+						varList->isInFuncDef = 0;
 						addVarPoint(varList, varDec->lineno);
 						
 						/* code for IR*/
@@ -1249,6 +1390,7 @@ void  DefAnalyzer(expnode *def, int usage, type *structType)
 					else if(dec->exp_num == 2)
 					{
 						varList = VarDecAnalyzer(defType, varDec);
+						varList->isInFuncDef = 0;
 						addVarPoint(varList, varDec->lineno);
 
 						/* code for IR*/
@@ -1263,6 +1405,27 @@ void  DefAnalyzer(expnode *def, int usage, type *structType)
 						{
 							insertError(5, dec->lineno, NULL);
 						}
+						/* code for IR*/
+						else
+						{
+							Operand *leftVar;
+							leftVar = malloc(sizeof(Operand));
+							leftVar->kind = VARo;
+							leftVar->u.var_name = malloc(strlen(varList->name) + 1);
+							strcpy(leftVar->u.var_name, varList->name);
+							
+							Operand *t1;
+							t1 = new_temp();
+							translate_EXP(dec->son_node[2], t1);
+							
+							InterCode *code1;
+							code1 = malloc(sizeof(InterCode));
+							code1->kind = ASSIGNc;
+							code1->u.assign.left = leftVar;
+							code1->u.assign.right = t1;
+							insertCodeList(code1);						
+						}
+						/* code end*/
 					}
 					
 					//dec->exp_num == 2 have = and exp, do it later
@@ -1308,6 +1471,7 @@ void  DefAnalyzer(expnode *def, int usage, type *structType)
 				if(dec->exp_num == 1)
 				{
 					varList = VarDecAnalyzer(defType, varDec);
+					varList->isInFuncDef = 0;
 					addVarPoint(varList, varDec->lineno);
 					
 					/* code for IR*/
@@ -1320,6 +1484,7 @@ void  DefAnalyzer(expnode *def, int usage, type *structType)
 				else if(dec->exp_num == 2)
 				{
 					varList = VarDecAnalyzer(defType, varDec);
+					varList->isInFuncDef = 0;
 					addVarPoint(varList, varDec->lineno);
 
 					/* code for IR*/
@@ -1334,6 +1499,27 @@ void  DefAnalyzer(expnode *def, int usage, type *structType)
 					{
 						insertError(5, dec->lineno, NULL);
 					}
+					/* code for IR*/
+					else
+					{
+						Operand *leftVar;
+						leftVar = malloc(sizeof(Operand));
+						leftVar->kind = VARo;
+						leftVar->u.var_name = malloc(strlen(varList->name) + 1);
+						strcpy(leftVar->u.var_name, varList->name);
+						
+						Operand *t1;
+						t1 = new_temp();
+						translate_EXP(dec->son_node[2], t1);
+						
+						InterCode *code1;
+						code1 = malloc(sizeof(InterCode));
+						code1->kind = ASSIGNc;
+						code1->u.assign.left = leftVar;
+						code1->u.assign.right = t1;
+						insertCodeList(code1);						
+					}
+					/* code end*/
 				}
 				
 				// same
