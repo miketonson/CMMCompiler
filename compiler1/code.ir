@@ -1,26 +1,295 @@
 FUNCTION main :
-DEC a 200
-t2 := &a
+t1 := #3
+a := t1
+t2 := #4
+b := t2
 t3 := #0
-t4 := #3
-t4 := t4 * #20
-t3 := t3 + t4
-t5 := #4
-t5 := t5 * #4
-t3 := t3 + t5
-t6 := t2 + t3
-t7 := #234
-*t6 := t7
-t9 := &a
-t10 := #0
-t11 := #3
-t11 := t11 * #20
-t10 := t10 + t11
-t12 := #4
-t12 := t12 * #4
-t10 := t10 + t12
-t13 := t9 + t10
-t8 := *t13
-WRITE t8
+i := t3
+t4 := #0
+sum := t4
+DEC array 600
+t6 := a
+t7 := a
+t5 := t6 * t7
+d := t5
+t9 := b
+t10 := b
+t8 := t9 * t10
+e := t8
+t12 := #1
+t11 := #0 - t12
+IF t11 != #0 GOTO label1
+GOTO label3
+LABEL label3 :
+t15 := d
+t16 := e
+t13 := t15 + t16
 t14 := #0
-RETURN t14
+IF t13 > t14 GOTO label1
+GOTO label2
+LABEL label1 :
+t24 := a
+t25 := a
+t22 := t24 * t25
+t26 := b
+t27 := b
+t23 := t26 * t27
+t20 := t22 - t23
+t28 := d
+t29 := e
+t21 := t28 * t29
+t18 := t20 + t21
+t30 := a
+t31 := #8
+t19 := t30 - t31
+t17 := t18 / t19
+i := t17
+LABEL label2 :
+t38 := #7
+t40 := a
+t42 := #1
+t43 := #2
+t41 := t42 + t43
+t39 := t40 * t41
+t36 := t38 - t39
+t46 := #36
+t48 := #10
+t49 := #1
+t47 := t48 - t49
+t44 := t46 / t47
+t45 := b
+t37 := t44 * t45
+t34 := t36 - t37
+t50 := d
+t51 := e
+t35 := t50 * t51
+t33 := t34 + t35
+t32 := #0 - t33
+c := t32
+t53 := c
+t54 := c
+t52 := t53 - t54
+i := t52
+LABEL label4 :
+t55 := i
+t57 := #100
+t58 := #50
+t56 := t57 + t58
+IF t55 < t56 GOTO label5
+GOTO label6
+LABEL label5 :
+t60 := &array
+t61 := #0
+t62 := i
+t62 := t62 * #4
+t61 := t61 + t62
+t63 := t60 + t61
+t64 := #1
+*t63 := t64
+t66 := i
+t67 := #1
+t65 := t66 + t67
+i := t65
+GOTO label4
+LABEL label6 :
+t75 := &array
+t76 := #0
+t77 := #0
+t77 := t77 * #4
+t76 := t76 + t77
+t78 := t75 + t76
+t73 := *t78
+t74 := d
+t71 := t73 + t74
+t72 := #1
+t69 := t71 - t72
+t70 := d
+t68 := t69 - t70
+i := t68
+LABEL label7 :
+t79 := i
+t82 := #1
+t86 := c
+t88 := b
+t89 := b
+t87 := t88 * t89
+t84 := t86 - t87
+t90 := a
+t91 := a
+t85 := t90 * t91
+t83 := t84 + t85
+t81 := t82 * t83
+t80 := #0 - t81
+IF t79 < t80 GOTO label8
+GOTO label9
+LABEL label8 :
+t95 := a
+t96 := #4
+t93 := t95 + t96
+t94 := b
+t92 := t93 - t94
+k := t92
+t97 := d
+j := t97
+t99 := k
+t100 := #1
+t98 := t99 - t100
+l := t98
+LABEL label10 :
+t101 := j
+t107 := a
+t108 := b
+t105 := t107 + t108
+t106 := #10
+t103 := t105 - t106
+t104 := #3
+t102 := t103 + t104
+IF t101 > t102 GOTO label11
+GOTO label12
+LABEL label11 :
+t109 := #0
+f := t109
+t111 := &array
+t112 := #0
+t114 := i
+t115 := #10
+t113 := t114 / t115
+t113 := t113 * #4
+t112 := t112 + t113
+t116 := t111 + t112
+t120 := &array
+t121 := #0
+t123 := i
+t124 := #10
+t122 := t123 / t124
+t122 := t122 * #4
+t121 := t121 + t122
+t125 := t120 + t121
+t118 := *t125
+t126 := j
+t127 := #3
+t119 := t126 * t127
+t117 := t118 + t119
+*t116 := t117
+t128 := l
+t129 := #2
+IF t128 == t129 GOTO label13
+GOTO label14
+LABEL label13 :
+t131 := &array
+t132 := #0
+t134 := i
+t135 := #10
+t133 := t134 / t135
+t133 := t133 * #4
+t132 := t132 + t133
+t136 := t131 + t132
+t140 := &array
+t141 := #0
+t143 := i
+t144 := #10
+t142 := t143 / t144
+t142 := t142 * #4
+t141 := t141 + t142
+t145 := t140 + t141
+t138 := *t145
+t146 := #2
+t148 := j
+t149 := #3
+t147 := t148 * t149
+t139 := t146 + t147
+t137 := t138 - t139
+*t136 := t137
+LABEL label14 :
+t150 := i
+t151 := #100
+IF t150 > t151 GOTO label15
+GOTO label16
+LABEL label15 :
+t155 := j
+t156 := #2
+t153 := t155 / t156
+t154 := #1
+t152 := t153 - t154
+f := t152
+GOTO label17
+LABEL label16 :
+t158 := &array
+t159 := #0
+t161 := i
+t162 := #10
+t160 := t161 / t162
+t160 := t160 * #4
+t159 := t159 + t160
+t163 := t158 + t159
+t167 := &array
+t168 := #0
+t170 := i
+t171 := #10
+t169 := t170 / t171
+t169 := t169 * #4
+t168 := t168 + t169
+t172 := t167 + t168
+t165 := *t172
+t166 := j
+t164 := t165 + t166
+*t163 := t164
+LABEL label17 :
+t174 := f
+t175 := #1
+t173 := t174 - t175
+f := t173
+t179 := j
+t180 := #2
+t177 := t179 / t180
+t178 := #1
+t176 := t177 - t178
+j := t176
+GOTO label10
+LABEL label12 :
+t183 := b
+t184 := sum
+t181 := t183 + t184
+t182 := d
+IF t181 < t182 GOTO label18
+GOTO label20
+LABEL label20 :
+t185 := e
+IF t185 != #0 GOTO label18
+GOTO label19
+LABEL label18 :
+t187 := i
+t188 := #1
+t186 := t187 + t188
+i := t186
+LABEL label19 :
+GOTO label7
+LABEL label9 :
+t189 := #0
+i := t189
+LABEL label21 :
+t190 := i
+t191 := #150
+IF t190 < t191 GOTO label22
+GOTO label23
+LABEL label22 :
+t193 := sum
+t195 := &array
+t196 := #0
+t197 := i
+t197 := t197 * #4
+t196 := t196 + t197
+t198 := t195 + t196
+t194 := *t198
+t192 := t193 + t194
+sum := t192
+t200 := i
+t201 := #1
+t199 := t200 + t201
+i := t199
+GOTO label21
+LABEL label23 :
+t203 := sum
+WRITE t203
+t204 := #0
+RETURN t204

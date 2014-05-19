@@ -160,6 +160,24 @@ void translate_EXP(expnode *EXP, Operand *place)
 				var->u.var_name = malloc(strlen(EXP->son_node[0]->id_vaule) + 1);
 				strcpy(var->u.var_name, EXP->son_node[0]->id_vaule);
 
+				point *varPoint = findPoint(var->u.var_name, 2, nowLayerNum);
+				type *varType = varPoint->p.var_defPoint.var_defP->var_type;
+				if((varType->kind == structure || varType->kind == array) && varPoint->p.var_defPoint.var_defP->isInFuncDef == 0)
+				{
+					Operand *addr;
+					addr = malloc(sizeof(Operand));
+					addr->kind = ADDRo;
+					addr->u.addr_of = var;
+
+					InterCode *varCode;
+					varCode = malloc(sizeof(InterCode));
+					varCode->kind = ASSIGNc;
+					varCode->u.assign.left = place;
+					varCode->u.assign.right = addr;
+					insertCodeList(varCode);
+					break;
+				}
+
 				InterCode *varCode;
 				varCode = malloc(sizeof(InterCode));
 				varCode->prev = NULL;
@@ -205,6 +223,7 @@ void translate_EXP(expnode *EXP, Operand *place)
 							break;
 						}
 					case 14: /* for EXP LB EXP LB */
+					case 15: /* for EXP DOT ID */
 						{
 							Operand *t1;
 							t1 = new_temp();
@@ -358,6 +377,12 @@ void translate_EXP(expnode *EXP, Operand *place)
 			}
 		case 13: /* for ID LP RP */
 			{
+				if(place == NULL)
+				{
+					Operand *t1;
+					t1 = new_temp();
+					place = t1;
+				}
 				Operand *func;
 				func = malloc(sizeof(Operand));
 				func->kind = FUNCo;
@@ -384,6 +409,12 @@ void translate_EXP(expnode *EXP, Operand *place)
 			}
 		case 12: /* for ID LP ARG RP */
 			{
+				if(place == NULL)
+				{
+					Operand *t1;
+					t1 = new_temp();
+					place = t1;
+				}
 				Operand *func;
 				func = malloc(sizeof(Operand));
 				func->kind = FUNCo;
@@ -445,26 +476,26 @@ void translate_EXP(expnode *EXP, Operand *place)
 				Operand *t1;// base address
 				t1 = new_temp();
 				/* first get the base address */
-				Operand *var;
-				var = malloc(sizeof(Operand));
+				Operand *varo;
+				varo = malloc(sizeof(Operand));
 				if(tempNode->exp_num == 16) /* for ID */
 				{
 					point *tempPoint;
 					tempPoint = findPoint(tempNode->son_node[0]->id_vaule, 2, nowLayerNum);
-					var->kind = VARo;
-					var->u.var_name = malloc(strlen(tempNode->son_node[0]->id_vaule) + 1);
-					strcpy(var->u.var_name, tempNode->son_node[0]->id_vaule);
+					varo->kind = VARo;
+					varo->u.var_name = malloc(strlen(tempNode->son_node[0]->id_vaule) + 1);
+					strcpy(varo->u.var_name, tempNode->son_node[0]->id_vaule);
 
 					if(tempPoint->p.var_defPoint.var_defP->isInFuncDef == 1)
 					{
-						t1 = var;//var itself is base address
+						t1 = varo;//var itself is base address
 					}
 					else
 					{
 						Operand *addr;
 						addr = malloc(sizeof(Operand));
 						addr->kind = ADDRo;
-						addr->u.addr_of = var;
+						addr->u.addr_of = varo;
 
 						InterCode *code1;
 						code1 = malloc(sizeof(InterCode));
@@ -560,9 +591,250 @@ void translate_EXP(expnode *EXP, Operand *place)
 						insertCodeList(code3);
 					}
 				}
+				else if(tempNode->exp_num == 15)/* for EXP DOT ID */
+				{
+					translate_EXP(tempNode, t1);
+
+					type *structType = getStructType(tempNode->son_node[0]);
+					var *structTail = structType->u.stru.structure;
+					while(structTail != NULL)
+					{
+						if(strcmp(structTail->name, tempNode->son_node[2]->id_vaule) == 0)
+						{
+							break;
+						}
+						structTail = structTail->t.struct_tail;
+					}
+					
+					Operand *t2;// offset address
+					t2 = new_temp();
+
+					InterCode *code1;
+					code1 = malloc(sizeof(InterCode));
+					code1->kind = ASSIGNc;
+					code1->u.assign.left = t2;
+					Operand *zero;
+					zero = malloc(sizeof(Operand));
+					zero->kind = CONSTo;
+					zero->u.const_value = 0;
+					code1->u.assign.right = zero;
+					insertCodeList(code1);
+
+					type *tempType = structTail->var_type;
+				
+					while(arrayDim != 0)
+					{
+						tempNode = tempNode->father_node;
+						Operand *t3;
+						t3 = new_temp();
+						translate_EXP(tempNode->son_node[2], t3);
+
+						int typeSize;
+						typeSize = dec_sizeCal(tempType->u.array.elem);
+
+						Operand *size;
+						size = malloc(sizeof(Operand));
+						size->kind = CONSTo;
+						size->u.const_value = typeSize;
+
+						InterCode *code2;
+						code2 = malloc(sizeof(InterCode));
+						code2->kind = MULc;
+						code2->u.binop.result = t3;
+						code2->u.binop.op1 = t3;
+						code2->u.binop.op2 = size;
+						insertCodeList(code2);
+
+						InterCode *code3;
+						code3 = malloc(sizeof(InterCode));
+						code3->kind = ADDc;
+						code3->u.binop.result = t2;
+						code3->u.binop.op1 = t2;
+						code3->u.binop.op2 = t3;
+						insertCodeList(code3);
+
+						arrayDim--;
+						tempType = tempType->u.array.elem;
+					}
+					/* if it is a array or struct, return a address */
+					if(tempType->kind == structure || tempType->kind == array)
+					{
+						InterCode *code2;
+						code2 = malloc(sizeof(InterCode));
+						code2->kind = ADDc;
+						code2->u.binop.result = place;
+						code2->u.binop.op1 = t1;
+						code2->u.binop.op2 = t2;
+						insertCodeList(code2);
+					}
+					/* else return the var */
+					else
+					{
+						Operand *t3;// finial address
+						t3 = new_temp();
+						InterCode *code2;
+						code2 = malloc(sizeof(InterCode));
+						code2->kind = ADDc;
+						code2->u.binop.result = t3;
+						code2->u.binop.op1 = t1;
+						code2->u.binop.op2 = t2;
+						insertCodeList(code2);
+
+						Operand *star;
+						star = malloc(sizeof(Operand));
+						star->kind = STARo;
+						star->u.addr_from = t3;
+						InterCode *code3;
+						code3 = malloc(sizeof(InterCode));
+						code3->kind = ASSIGNc;
+						code3->u.assign.left = place;
+						code3->u.assign.right = star;
+						insertCodeList(code3);
+					}
+				}
+				break;
+			}
+		case 15: /* for EXP DOT ID */
+			{
+				Operand *t1; // base address
+				t1 = new_temp();
+				translate_EXP(EXP->son_node[0], t1);
+
+				type *structType;
+				structType = getStructType(EXP->son_node[0]);
+
+
+				Operand *t2; // offset address
+				t2 = new_temp();
+
+				InterCode *code1;
+				code1 = malloc(sizeof(InterCode));
+				code1->kind = ASSIGNc;
+				code1->u.assign.left = t2;
+				Operand *zero;
+				zero = malloc(sizeof(Operand));
+				zero->kind = CONSTo;
+				zero->u.const_value = 0;
+				code1->u.assign.right = zero;
+				insertCodeList(code1);
+
+				var *structTail = structType->u.stru.structure;
+				while(structTail != NULL)
+				{
+					if(strcmp(structTail->name, EXP->son_node[2]->id_vaule) == 0)
+					{
+						break;
+					}
+					int tailSize;
+					tailSize = dec_sizeCal(structTail->var_type);
+					Operand *size;
+					size = malloc(sizeof(Operand));
+					size->kind = CONSTo;
+					size->u.const_value = tailSize;
+
+					InterCode *code1;
+					code1 = malloc(sizeof(InterCode));
+					code1->kind = ADDc;
+					code1->u.binop.result = t2;
+					code1->u.binop.op1 = t2;
+					code1->u.binop.op2 = size;
+					insertCodeList(code1);
+
+					structTail = structTail->t.struct_tail;
+				}
+				if(structTail->var_type->kind == structure || structTail->var_type->kind == array)
+				{
+					InterCode *code1;
+					code1 = malloc(sizeof(InterCode));
+					code1->kind = ADDc;
+					code1->u.binop.result = place;
+					code1->u.binop.op1 = t1;
+					code1->u.binop.op2 = t2;
+					insertCodeList(code1);
+				}
+				else
+				{
+					Operand *t3; // final address
+					t3 = new_temp();
+
+					InterCode *code1;
+					code1 = malloc(sizeof(InterCode));
+					code1->kind = ADDc;
+					code1->u.binop.result = t3;
+					code1->u.binop.op1 = t1;
+					code1->u.binop.op2 = t2;
+					insertCodeList(code1);
+
+					Operand *star;
+					star = malloc(sizeof(Operand));
+					star->kind = STARo;
+					star->u.addr_from = t3;
+
+					InterCode *code2;
+					code2 = malloc(sizeof(InterCode));
+					code2->kind = ASSIGNc;
+					code2->u.assign.left = place;
+					code2->u.assign.right = star;
+					insertCodeList(code2);
+				}
 				break;
 			}
 	}
+}
+
+type * getStructType(expnode *EXP)
+{
+	type *structType;
+	switch(EXP->exp_num)
+	{
+		case 16: /* for ID */
+			{
+				point *varPoint = findPoint(EXP->son_node[0]->id_vaule, 2, nowLayerNum);
+				structType = varPoint->p.var_defPoint.var_defP->var_type;
+				while(structType->kind != structure)
+				{
+					structType = structType->u.array.elem;
+				}
+				if(structType->u.stru.struct_name != NULL && structType->u.stru.structure == NULL)
+				{
+					point *typePoint = findPoint(structType->u.stru.struct_name, 3, nowLayerNum);
+					structType = typePoint->p.struct_decPoint.struct_decP;
+				}
+				break;
+			}
+		case 15: /* for EXP DOT ID */
+			{
+				structType = getStructType(EXP->son_node[0]);
+				char *structName = EXP->son_node[2]->id_vaule;
+				var *structTail = structType->u.stru.structure;
+				while(structTail != NULL)
+				{
+					if(strcmp(structTail->name, structName) == 0)
+					{
+						break;
+					}
+					structTail = structTail->t.struct_tail;
+				}
+				structType = structTail->var_type;
+				while(structType->kind != structure)
+				{
+					structType = structType->u.array.elem;
+				}
+				break;
+			}
+		case 14: /* for EXP LB EXP RB */
+			{
+				expnode *tempNode;
+				tempNode = EXP->son_node[0];
+				while(tempNode->exp_num != 15 && tempNode->exp_num != 16)
+				{
+					tempNode = tempNode->son_node[0];
+				}
+				structType = getStructType(tempNode);
+				break;
+			}
+	}
+	return structType;
 }
 
 Operand * translate_ARG(expnode *ARG, Operand *argList)

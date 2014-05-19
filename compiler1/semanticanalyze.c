@@ -16,6 +16,7 @@
  * =====================================================================================
  */
 #include <stdlib.h>
+#include <assert.h>
 #include "tree.h"
 #include "semanticlist.h"
 #include "semanticanalyze.h"
@@ -375,7 +376,7 @@ type * ExpAnalyzer(expnode *expNode, int etype)
 	{
 		case 1: // =
 			{
-				if(etype == 1 || etype == 2)
+				if(etype == 1 || etype == 2 || etype == 3 || etype == 0)
 				{
 					type *leftType = ExpAnalyzer(expNode->son_node[0], 3);
 					type *rightType = ExpAnalyzer(expNode->son_node[2], 0);

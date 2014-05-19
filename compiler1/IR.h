@@ -85,6 +85,7 @@ Operand * new_label();
 void mem_dec(var *varPoint);
 int dec_sizeCal(type *varType);   
 void translate_EXP(expnode *EXP, Operand *place);
+type * getStructType(expnode *EXP);
 Operand * translate_ARG(expnode *ARG, Operand *argList);
 void translate_STMT(expnode *STMT);
 void translate_COND(expnode *EXP, Operand *label_true, Operand *label_false);
