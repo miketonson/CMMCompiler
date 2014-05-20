@@ -29,6 +29,11 @@ int main(int argc, char** argv){
 	printTestError();
 	
 	/* code for IR*/
+	optIRCode();
+	optIRCode2();
+	optIRCode3();
+	optIRCode4();
+
 	printCodeList();
 	/* code end */
 	return 0;

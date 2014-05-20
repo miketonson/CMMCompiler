@@ -26,6 +26,8 @@ void insertCodeList(InterCode *interCode)
 	if(interCodeList == NULL)
 	{
 		interCodeList = interCode;
+		interCode->prev = NULL;
+		interCode->next = NULL;
 	}
 	else
 	{
@@ -37,6 +39,7 @@ void insertCodeList(InterCode *interCode)
 		}
 		exCodes->next = interCode;
 		interCode->prev = exCodes;
+		interCode->next = NULL;
 	}
 	return;
 }
@@ -1284,4 +1287,620 @@ void printCodeList()
 		printCode = printCode->next;
 	}
 	fclose(code);
+}
+
+void optIRCode()
+{
+	InterCode *tempCode;
+	tempCode = interCodeList;
+	while(tempCode != NULL)
+	{
+		if(tempCode->kind != ASSIGNc || tempCode->u.assign.left == NULL || tempCode->u.assign.left->kind != TEMPo)
+		{
+			tempCode = tempCode->next;
+			continue;
+		}
+		Operand *temp;
+		temp = tempCode->u.assign.left;
+		
+		Operand *op;
+		op = tempCode->u.assign.right;
+
+		InterCode *tempCode1;
+		tempCode1 = tempCode->next;
+		int isLeft = 0;
+		while(tempCode1 != NULL)
+		{
+			if(tempCode1->kind == ASSIGNc && tempCode1->u.assign.left != NULL)
+			{
+				if(tempCode1->u.assign.left->kind == STARo && tempCode1->u.assign.left->u.addr_from->kind == TEMPo && tempCode1->u.assign.left->u.addr_from->u.temp_no == temp->u.temp_no)
+				{
+					isLeft = 1;
+					break;
+				}
+				if(tempCode1->u.assign.left->kind == TEMPo && tempCode1->u.assign.left->u.temp_no == temp->u.temp_no)
+				{
+					refreshCodeList(tempCode1, temp);
+					//isLeft = 1;
+					break;
+				}
+				if(tempCode1->u.assign.right->kind == STARo && tempCode1->u.assign.right->u.addr_from->kind == TEMPo && tempCode1->u.assign.right->u.addr_from->u.temp_no == temp->u.temp_no && (op->kind == ADDRo || op->kind == STARo))
+				{
+					isLeft = 1;
+					break;
+				}
+			}
+			if(tempCode1->kind == ADDc || tempCode1->kind == SUBc || tempCode1->kind == MULc || tempCode1->kind == DIVc)
+			{
+				if(tempCode1->u.binop.result->kind == STARo && tempCode1->u.binop.result->u.addr_from->kind == TEMPo && tempCode1->u.binop.result->u.addr_from->u.temp_no == temp->u.temp_no)
+				{
+					isLeft = 1;
+					break;
+				}
+				if(tempCode1->u.binop.result->kind == TEMPo && tempCode1->u.binop.result->u.temp_no == temp->u.temp_no)
+				{
+					refreshCodeList(tempCode1, temp);
+					//isLeft = 1;
+					break;
+				}
+				Operand *op1;
+				Operand *op2;
+				op1 = tempCode1->u.binop.op1;
+				op2 = tempCode1->u.binop.op2;
+				if(op1->kind == STARo && op1->u.addr_from->kind == TEMPo && op1->u.addr_from->u.temp_no == temp->u.temp_no && (op->kind == ADDRo || op->kind == STARo))
+				{
+					isLeft = 1;
+					break;
+				}
+				if(op2->kind == STARo && op2->u.addr_from->kind == TEMPo && op2->u.addr_from->u.temp_no == temp->u.temp_no && (op->kind == ADDRo || op->kind == STARo))
+				{
+					isLeft = 1;
+					break;
+				}
+			}
+			if(tempCode1->kind == CALL_FUNCc)
+			{
+				if(tempCode1->u.call_func.var->kind == STARo && tempCode1->u.call_func.var->u.addr_from->kind == TEMPo && tempCode1->u.call_func.var->u.addr_from->u.temp_no == temp->u.temp_no)
+				{
+					isLeft = 1;
+					break;
+				}
+				if(tempCode1->u.call_func.var->kind == TEMPo && tempCode1->u.call_func.var->u.temp_no == temp->u.temp_no)
+				{
+					refreshCodeList(tempCode1, temp);
+					//isLeft = 1;
+					break;
+				}
+			}
+			if(tempCode1->kind == READc)
+			{
+				if(tempCode1->u.op->kind == STARo && tempCode1->u.op->u.addr_from->kind == TEMPo && tempCode1->u.op->u.addr_from->u.temp_no == temp->u.temp_no)
+				{
+					isLeft = 1;
+					break;
+				}
+				if(tempCode1->u.op->kind == TEMPo && tempCode1->u.op->u.temp_no == temp->u.temp_no)
+				{
+					refreshCodeList(tempCode1, temp);
+					//isLeft = 1;
+					break;
+				}
+			}
+			if(tempCode1->kind == ARGc || tempCode1->kind == WRITEc || tempCode1->kind == RETURNc)
+			{
+				Operand *op1;
+				op1 = tempCode1->u.op;
+				if(op1->kind == STARo && op1->u.addr_from->kind == TEMPo && op1->u.addr_from->u.temp_no == temp->u.temp_no && (op->kind == ADDRo || op->kind == STARo))
+				{
+					isLeft = 1;
+					break;
+				}
+			}
+			if(tempCode1->kind == IF_GOTOc)
+			{
+				Operand *op1;
+				Operand *op2;
+				op1 = tempCode1->u.if_goto.left;
+				op2 = tempCode1->u.if_goto.right;
+				if(op1->kind == STARo && op1->u.addr_from->kind == TEMPo && op1->u.addr_from->u.temp_no == temp->u.temp_no && (op->kind == ADDRo || op->kind == STARo))
+				{
+					isLeft = 1;
+					break;
+				}
+				if(op2->kind == STARo && op2->u.addr_from->kind == TEMPo && op2->u.addr_from->u.temp_no == temp->u.temp_no && (op->kind == ADDRo || op->kind == STARo))
+				{
+					isLeft = 1;
+					break;
+				}
+			}
+			tempCode1 = tempCode1->next;
+		}
+		if(isLeft == 1)
+		{
+			tempCode = tempCode->next;
+			continue;
+		}
+
+		InterCode *tempCode2;
+		tempCode2 = tempCode->next;
+		while(tempCode2 != NULL)
+		{
+			switch(tempCode2->kind)
+			{
+				case ASSIGNc:
+					{
+						if(tempCode2->u.assign.right->kind == TEMPo && tempCode2->u.assign.right->u.temp_no == temp->u.temp_no)
+						{
+							tempCode2->u.assign.right = op;
+						}
+						if(tempCode2->u.assign.right->kind == ADDRo && tempCode2->u.assign.right->u.addr_of->kind == TEMPo && tempCode2->u.assign.right->u.addr_of->u.temp_no == temp->u.temp_no)
+						{
+							tempCode2->u.assign.right->u.addr_of = op;
+						}
+						if(tempCode2->u.assign.right->kind == STARo && tempCode2->u.assign.right->u.addr_from->kind == TEMPo && tempCode2->u.assign.right->u.addr_from->u.temp_no == temp->u.temp_no)
+						{
+							tempCode2->u.assign.right->u.addr_from = op;
+						}
+						break;
+					}
+			 	case ADDc:
+				case SUBc:
+				case DIVc:
+				case MULc:
+					{
+						if(tempCode2->u.binop.op1->kind == TEMPo && tempCode2->u.binop.op1->u.temp_no == temp->u.temp_no)
+						{
+							tempCode2->u.binop.op1 = op;
+						}
+						if(tempCode2->u.binop.op2->kind == TEMPo && tempCode2->u.binop.op2->u.temp_no == temp->u.temp_no)
+						{
+							tempCode2->u.binop.op2 = op;
+						}
+						if(tempCode2->u.binop.op1->kind == ADDRo && tempCode2->u.binop.op1->u.addr_of->kind == TEMPo && tempCode2->u.binop.op1->u.addr_of->u.temp_no == temp->u.temp_no)
+						{
+							tempCode2->u.binop.op1->u.addr_of = op;
+						}
+						if(tempCode2->u.binop.op2->kind == ADDRo && tempCode2->u.binop.op2->u.addr_of->kind == TEMPo && tempCode2->u.binop.op2->u.addr_of->u.temp_no == temp->u.temp_no)
+						{
+							tempCode2->u.binop.op2->u.addr_of = op;
+						}
+						if(tempCode2->u.binop.op1->kind == STARo && tempCode2->u.binop.op1->u.addr_from->kind == TEMPo && tempCode2->u.binop.op1->u.addr_from->u.temp_no == temp->u.temp_no)
+						{
+							tempCode2->u.binop.op1->u.addr_from = op;
+						}
+						if(tempCode2->u.binop.op2->kind == STARo && tempCode2->u.binop.op2->u.addr_from->kind == TEMPo && tempCode2->u.binop.op2->u.addr_from->u.temp_no == temp->u.temp_no)
+						{
+							tempCode2->u.binop.op2->u.addr_from = op;
+						}
+						break;
+					}
+				case ARGc:
+				case WRITEc:
+				case RETURNc:
+					{
+						if(tempCode2->u.op->kind == TEMPo && tempCode2->u.op->u.temp_no == temp->u.temp_no)
+						{
+							tempCode2->u.op = op;
+						}
+						if(tempCode2->u.op->kind == STARo && tempCode2->u.op->u.addr_from->kind == TEMPo && tempCode2->u.op->u.addr_from->u.temp_no == temp->u.temp_no)
+						{
+							tempCode2->u.op->u.addr_from = op;
+						}
+						break;
+					}
+				case IF_GOTOc:
+					{
+						if(tempCode2->u.if_goto.left->kind == TEMPo && tempCode2->u.if_goto.left->u.temp_no == temp->u.temp_no)
+						{
+							tempCode2->u.if_goto.left = op;
+						}
+						if(tempCode2->u.if_goto.right->kind == TEMPo && tempCode2->u.if_goto.right->u.temp_no == temp->u.temp_no)
+						{
+							tempCode2->u.if_goto.right = op;
+						}
+						if(tempCode2->u.if_goto.left->kind == STARo && tempCode2->u.if_goto.left->u.addr_from->kind == TEMPo && tempCode2->u.if_goto.left->u.addr_from->u.temp_no == temp->u.temp_no)
+						{
+							tempCode2->u.if_goto.left->u.addr_from = op;
+						}
+						if(tempCode2->u.if_goto.right->kind == STARo && tempCode2->u.if_goto.right->u.addr_from->kind == TEMPo && tempCode2->u.if_goto.right->u.addr_from->u.temp_no == temp->u.temp_no)
+						{
+							tempCode2->u.if_goto.right->u.addr_from = op;
+						}
+						break;
+					}
+				default:
+					break;
+			}
+			tempCode2 = tempCode2->next;
+		}
+		if(tempCode->prev)
+		tempCode->prev->next = tempCode->next;
+		tempCode->next->prev = tempCode->prev;
+		tempCode = tempCode->next;
+	}
+}
+
+void refreshCodeList(InterCode *startCode, Operand *oldTemp)
+{
+	Operand *newTemp;
+	newTemp = new_temp();
+
+	InterCode *tempCode;
+	tempCode = startCode;
+
+	switch(tempCode->kind)
+	{
+		case ASSIGNc:
+			{
+				tempCode->u.assign.left = newTemp;
+				break;
+			}
+		case ADDc:
+		case SUBc:
+		case MULc:
+		case DIVc:
+			{
+				tempCode->u.binop.result = newTemp;
+				break;
+			}
+		case CALL_FUNCc:
+			{
+				tempCode->u.call_func.var = newTemp;
+				break;
+			}
+		case READc:
+			{
+				tempCode->u.op = newTemp;
+			}
+		default:
+			break;
+	}
+
+	tempCode = tempCode->next;
+
+	while(tempCode != NULL)
+	{
+		switch(tempCode->kind)
+		{
+			case ASSIGNc:
+				{
+					Operand *op1;
+					Operand *op2;
+					op1 = tempCode->u.assign.left;
+					op2 = tempCode->u.assign.right;
+					if(op1 == NULL)
+						break;
+					if(op1->kind == TEMPo && op1->u.temp_no == oldTemp->u.temp_no)
+					{
+						tempCode->u.assign.left = newTemp;
+					}
+					if(op2->kind == TEMPo && op2->u.temp_no == oldTemp->u.temp_no)
+					{
+						tempCode->u.assign.right = newTemp;
+					}
+					if(op1->kind == STARo && op1->u.addr_from->kind == TEMPo && op1->u.addr_from->u.temp_no == oldTemp->u.temp_no)
+					{
+						op1->u.addr_from = newTemp;
+					}
+					if(op2->kind == STARo && op2->u.addr_from->kind == TEMPo && op2->u.addr_from->u.temp_no == oldTemp->u.temp_no)
+					{
+						op2->u.addr_from = newTemp;
+					}
+					if(op1->kind == ADDRo && op1->u.addr_of->kind == TEMPo && op1->u.addr_of->u.temp_no == oldTemp->u.temp_no)
+					{
+						op1->u.addr_of = newTemp;
+					}
+					if(op2->kind == ADDRo && op2->u.addr_of->kind == TEMPo && op2->u.addr_of->u.temp_no == oldTemp->u.temp_no)
+					{
+						op2->u.addr_of = newTemp;
+					}
+					break;
+				}
+			case ADDc:
+			case SUBc:
+			case MULc:
+			case DIVc:
+				{
+					Operand *op1;
+					Operand *op2;
+					Operand *op3;
+					op1 = tempCode->u.binop.op1;
+					op2 = tempCode->u.binop.op2;
+					op3 = tempCode->u.binop.result;
+					if(op3 == NULL)
+						break;
+					if(op1->kind == TEMPo && op1->u.temp_no == oldTemp->u.temp_no)
+					{
+						tempCode->u.binop.op1 = newTemp;
+					}
+					if(op2->kind == TEMPo && op2->u.temp_no == oldTemp->u.temp_no)
+					{
+						tempCode->u.binop.op2 = newTemp;
+					}
+					if(op3->kind == TEMPo && op3->u.temp_no == oldTemp->u.temp_no)
+					{
+						tempCode->u.binop.result = newTemp;
+					}
+					if(op1->kind == STARo && op1->u.addr_from->kind == TEMPo && op1->u.addr_from->u.temp_no == oldTemp->u.temp_no)
+					{
+						op1->u.addr_from = newTemp;
+					}
+					if(op2->kind == STARo && op2->u.addr_from->kind == TEMPo && op2->u.addr_from->u.temp_no == oldTemp->u.temp_no)
+					{
+						op2->u.addr_from = newTemp;
+					}
+					if(op3->kind == STARo && op3->u.addr_from->kind == TEMPo && op3->u.addr_from->u.temp_no == oldTemp->u.temp_no)
+					{
+						op3->u.addr_from = newTemp;
+					}
+					if(op1->kind == ADDRo && op1->u.addr_of->kind == TEMPo && op1->u.addr_of->u.temp_no == oldTemp->u.temp_no)
+					{
+						op1->u.addr_of = newTemp;
+					}
+					if(op2->kind == ADDRo && op2->u.addr_of->kind == TEMPo && op2->u.addr_of->u.temp_no == oldTemp->u.temp_no)
+					{
+						op2->u.addr_of = newTemp;
+					}
+					if(op3->kind == ADDRo && op3->u.addr_of->kind == TEMPo && op3->u.addr_of->u.temp_no == oldTemp->u.temp_no)
+					{
+						op3->u.addr_of = newTemp;
+					}
+					break;
+				}
+			case IF_GOTOc:
+				{
+					Operand *op1;
+					Operand *op2;
+					op1 = tempCode->u.if_goto.left;
+					op2 = tempCode->u.if_goto.right;
+					if(op1->kind == TEMPo && op1->u.temp_no == oldTemp->u.temp_no)
+					{
+						tempCode->u.if_goto.left = newTemp;
+					}
+					if(op2->kind == TEMPo && op2->u.temp_no == oldTemp->u.temp_no)
+					{
+						tempCode->u.if_goto.right = newTemp;
+					}
+					if(op1->kind == STARo && op1->u.addr_from->kind == TEMPo && op1->u.addr_from->u.temp_no == oldTemp->u.temp_no)
+					{
+						op1->u.addr_from = newTemp;
+					}
+					if(op2->kind == STARo && op2->u.addr_from->kind == TEMPo && op2->u.addr_from->u.temp_no == oldTemp->u.temp_no)
+					{
+						op2->u.addr_from = newTemp;
+					}
+					if(op1->kind == ADDRo && op1->u.addr_of->kind == TEMPo && op1->u.addr_of->u.temp_no == oldTemp->u.temp_no)
+					{
+						op1->u.addr_of = newTemp;
+					}
+					if(op2->kind == ADDRo && op2->u.addr_of->kind == TEMPo && op2->u.addr_of->u.temp_no == oldTemp->u.temp_no)
+					{
+						op2->u.addr_of = newTemp;
+					}
+					break;
+				}
+			case RETURNc:
+			case ARGc:
+			case WRITEc:
+			case READc:
+				{
+					Operand *op1;
+					op1 = tempCode->u.op;
+					if(op1 == NULL)
+						break;
+					if(op1->kind == TEMPo && op1->u.temp_no == oldTemp->u.temp_no)
+					{
+						tempCode->u.op = newTemp;
+					}
+					if(op1->kind == STARo && op1->u.addr_from->kind == TEMPo && op1->u.addr_from->u.temp_no == oldTemp->u.temp_no)
+					{
+						op1->u.addr_from = newTemp;
+					}
+					if(op1->kind == ADDRo && op1->u.addr_of->kind == TEMPo && op1->u.addr_of->u.temp_no == oldTemp->u.temp_no)
+					{
+						op1->u.addr_of = newTemp;
+					}
+					break;
+				}
+			case CALL_FUNCc:
+				{
+					Operand *op1;
+					op1 == tempCode->u.call_func.var;
+					if(op1->kind == TEMPo && op1->u.temp_no == oldTemp->u.temp_no)
+					{
+						tempCode->u.call_func.var = newTemp;
+					}
+					if(op1->kind == STARo && op1->u.addr_from->kind == TEMPo && op1->u.addr_from->u.temp_no == oldTemp->u.temp_no)
+					{
+						op1->u.addr_from = newTemp;
+					}
+					if(op1->kind == ADDRo && op1->u.addr_of->kind == TEMPo && op1->u.addr_of->u.temp_no == oldTemp->u.temp_no)
+					{
+						op1->u.addr_of = newTemp;
+					}
+					break;
+				}
+			default:
+				break;
+		}
+		tempCode = tempCode->next;
+	}
+}
+
+void optIRCode2()
+{
+	int haveNum = 1;
+	InterCode *tempCode;
+	while(haveNum == 1)
+	{
+		haveNum = 0;
+		tempCode = interCodeList;
+		while(tempCode != NULL)
+		{
+			if((tempCode->kind == ADDc || tempCode->kind == SUBc || tempCode->kind == MULc || tempCode->kind == DIVc) && tempCode->u.binop.result != NULL)
+			{
+				if(tempCode->u.binop.op1->kind == CONSTo && tempCode->u.binop.op2->kind == CONSTo)
+				{
+					haveNum = 1;
+					Operand *result = tempCode->u.binop.result;
+					int const1 = tempCode->u.binop.op1->u.const_value;
+					int const2 = tempCode->u.binop.op2->u.const_value;
+					Operand *op;
+					op = malloc(sizeof(Operand));
+					op->kind = CONSTo;
+					switch(tempCode->kind)
+					{
+						case ADDc:
+							op->u.const_value = const1 + const2;
+							break;
+						case SUBc:
+							op->u.const_value = const1 - const2;
+							break;
+						case MULc:
+							op->u.const_value = const1 * const2;
+							break;
+						case DIVc:
+							op->u.const_value = const1 / const2;
+							break;
+					}
+					tempCode->kind = ASSIGNc;
+					tempCode->u.assign.left = result;
+					tempCode->u.assign.right = op;
+				}
+			}
+			tempCode = tempCode->next;
+		}
+		optIRCode();
+	}
+}
+
+void optIRCode3()
+{
+	InterCode *tempCode;
+	tempCode = interCodeList;
+	while(tempCode != NULL)
+	{
+		if(tempCode->kind == ASSIGNc && tempCode->u.assign.left != NULL && tempCode->u.assign.left->kind == VARo && tempCode->u.assign.right->kind == TEMPo)
+		{
+			Operand *op1;
+			Operand *op2;
+			op1 = tempCode->u.assign.left;
+			op2 = tempCode->u.assign.right;
+
+			InterCode *tempCode2;
+			tempCode2 = tempCode->prev;
+			while(tempCode2 != NULL)
+			{
+				if((tempCode2->kind == ADDc || tempCode2->kind == SUBc || tempCode2->kind == MULc || tempCode2->kind == DIVc) && tempCode2->u.binop.result != NULL)
+				{
+					if(tempCode2->u.binop.result->kind == TEMPo && tempCode2->u.binop.result->u.temp_no == op2->u.temp_no)
+					{
+						tempCode2->u.binop.result = op1;
+						break;
+					}
+				}
+				if(tempCode2->kind == READc && tempCode2->u.op != NULL)
+				{
+					if(tempCode2->u.op->kind == TEMPo && tempCode2->u.op->u.temp_no == op2->u.temp_no)
+					{
+						tempCode2->u.op = op1;
+						break;
+					}
+				}
+				if(tempCode2->kind == CALL_FUNCc && tempCode2->u.call_func.var != NULL)
+				{
+					if(tempCode2->u.call_func.var->kind == TEMPo && tempCode2->u.call_func.var->u.temp_no == op2->u.temp_no)
+					{
+						tempCode2->u.call_func.var = op1;
+						break;
+					}
+				}
+				tempCode2 = tempCode2->prev;
+			}
+			if(tempCode2 != NULL)
+			{
+				tempCode->prev->next = tempCode->next;
+				tempCode->next->prev = tempCode->prev;
+			}
+		}
+		tempCode = tempCode->next;
+	}
+}
+
+void optIRCode4()
+{
+	InterCode *tempCode;
+
+	int haveZero = 1;
+	while(haveZero == 1)
+	{
+		haveZero = 0;
+		tempCode = interCodeList;
+
+		while(tempCode != NULL)
+		{
+			if((tempCode->kind == ADDc || tempCode->kind == SUBc || tempCode->kind == MULc || tempCode->kind == DIVc) && tempCode->u.binop.result != NULL)
+			{
+				Operand *op1;
+				Operand *op2;
+				Operand *op3;
+				op1 = tempCode->u.binop.op1;
+				op2 = tempCode->u.binop.op2;
+				op3 = tempCode->u.binop.result;
+				if(op1->kind == CONSTo && op1->u.const_value == 0)
+				{
+					switch(tempCode->kind)
+					{
+						case ADDc:
+							{
+								tempCode->kind = ASSIGNc;
+								tempCode->u.assign.left = op3;
+								tempCode->u.assign.right = op2;
+								haveZero = 1;
+								break;
+							}
+						case MULc:
+						case DIVc:
+							{
+								tempCode->kind = ASSIGNc;
+								tempCode->u.assign.left = op3;
+								tempCode->u.assign.right = op1;
+								haveZero = 1;
+								break;
+							}
+						default:
+							break;
+					}
+				}
+				else if(op2->kind == CONSTo && op2->u.const_value == 0)
+				{
+					switch(tempCode->kind)
+					{
+						case ADDc:
+						case SUBc:
+							{
+								tempCode->kind = ASSIGNc;
+								tempCode->u.assign.left = op3;
+								tempCode->u.assign.right = op1;
+								haveZero = 1;
+								break;
+							}
+						case MULc:
+							{
+								tempCode->kind = ASSIGNc;
+								tempCode->u.assign.left = op3;
+								tempCode->u.assign.right = op2;
+								haveZero = 1;
+								break;
+							}
+						default:
+							break;
+					}
+				}
+			}
+			tempCode = tempCode->next;
+		}
+		optIRCode();
+		optIRCode2();
+	}
 }

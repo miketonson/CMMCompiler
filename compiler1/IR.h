@@ -90,4 +90,9 @@ Operand * translate_ARG(expnode *ARG, Operand *argList);
 void translate_STMT(expnode *STMT);
 void translate_COND(expnode *EXP, Operand *label_true, Operand *label_false);
 void printCodeList();
+void optIRCode();
+void refreshCodeList(InterCode *startCode, Operand *oldTemp);
+void optIRCode2();
+void optIRCode3();
+void optIRCode4();
 #endif
