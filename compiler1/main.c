@@ -4,6 +4,7 @@
 #include "semanticlist.h"
 #include "semanticanalyze.h"
 #include "IR.h"
+#include "scode.h"
 /* 
  * ===  FUNCTION  ======================================================================
  *         Name:  main
@@ -35,6 +36,7 @@ int main(int argc, char** argv){
 	optIRCode4();
 
 	printCodeList();
+	printSCODE();
 	/* code end */
 	return 0;
 }
