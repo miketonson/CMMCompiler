@@ -6,7 +6,7 @@ _ret: .asciiz "\n"
 main:
 move $fp $sp
 addi $sp, $sp, -2048
-li $t1 0
-sw $t1 -4($fp)
-lw $t1 -4($fp)
-sw $t1 -8($fp)
+li $t2 1
+lw $t1 -8($fp)
+add $t3, $t1, $t2
+sw $t3 -4($fp)

@@ -75,6 +75,64 @@ void printSCODE()
 					fprintf(code, "sw $t1 %d($fp)\n", leftOff);
 					break;
 				}
+			case ADDc:
+			case SUBc:
+			case MULc:
+			case DIVc:
+				{
+					if(printCode->u.binop.result == NULL)
+						break;
+					int resultOff = findVarOff(printCode->u.binop.result);
+					if(printCode->u.binop.op1->kind == CONSTo)
+					{
+						int num = printCode->u.binop.op1->u.const_value;
+						fprintf(code, "li $t1 %d\n", num);
+						int op2Off = findVarOff(printCode->u.binop.op2);
+						fprintf(code, "lw $t2 %d($fp)\n", op2Off);
+					}
+					else if(printCode->u.binop.op2->kind == CONSTo)
+					{
+						int num = printCode->u.binop.op2->u.const_value;
+						fprintf(code, "li $t2 %d\n", num);
+						int op1Off = findVarOff(printCode->u.binop.op1);
+						fprintf(code, "lw $t1 %d($fp)\n", op1Off);
+					}
+					else
+					{
+						int op1Off = findVarOff(printCode->u.binop.op1);
+						int op2Off = findVarOff(printCode->u.binop.op2);
+						fprintf(code, "lw $t1 %d($fp)\n", op1Off);
+						fprintf(code, "lw $t2 %d($fp)\n", op2Off);
+					}
+					switch(printCode->kind)
+					{
+						case ADDc:
+							{
+								fprintf(code, "add $t3, $t1, $t2\n");
+								break;
+							}
+						case SUBc:
+							{
+								fprintf(code, "sub $t3, $t1, $t2\n");
+								break;
+							}
+						case MULc:
+							{
+								fprintf(code, "mul $t3, $t1, $t2\n");
+								break;
+							}
+						case DIVc:
+							{
+								fprintf(code, "div $t1, $t2\n");
+								fprintf(code, "mflo $t3\n");
+								break;
+							}
+						default:
+							break;
+					}
+					fprintf(code, "sw $t3 %d($fp)\n", resultOff);
+					break;
+				}
 			default:
 				{
 					break;
