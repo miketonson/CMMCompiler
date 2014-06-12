@@ -89,6 +89,7 @@ type * getStructType(expnode *EXP);
 Operand * translate_ARG(expnode *ARG, Operand *argList);
 void translate_STMT(expnode *STMT);
 void translate_COND(expnode *EXP, Operand *label_true, Operand *label_false);
+char * printOperand(Operand *op);
 void printCodeList();
 void optIRCode();
 void refreshCodeList(InterCode *startCode, Operand *oldTemp);

@@ -1,2 +1,14 @@
 FUNCTION main :
-a := b + #1
+b := #5
+READ a
+LABEL label1 :
+IF a < #15 GOTO label2
+GOTO label3
+LABEL label2 :
+a := a + #1
+WRITE a
+GOTO label1
+LABEL label3 :
+a := b / a
+WRITE a
+RETURN #0

@@ -1,6 +1,14 @@
 int main()
 {
 	int a;
-	int b;
-	a = b + 1;
+	int b = 5;
+	a = read();
+	while(a<15)
+	{
+		a = a + 1;
+		write(a);	
+	}
+	a = b/a;
+	write(a);
+	return 0;
 }

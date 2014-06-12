@@ -10,8 +10,8 @@
  *       Revision:  none
  *       Compiler:  gcc
  *
- *         Author:  YOUR NAME (), 
- *   Organization:  
+ *         Author:  Guang-Zhi Tang, 
+ *   Organization:  NJU CS
  *
  * =====================================================================================
  */
@@ -49,7 +49,7 @@ void printSCODE()
 					fprintf(code, "%s:\n", nowFunc->funcName);
 					if(strcmp(nowFunc->funcName, "main") == 0)
 					{
-						fprintf(code, "move $fp $sp\n");
+						fprintf(code, "move $fp, $sp\n");
 					}
 					fprintf(code, "addi $sp, $sp, -2048\n");
 					funcOffset = 0;
@@ -65,14 +65,14 @@ void printSCODE()
 					if(printCode->u.assign.right->kind == CONSTo)
 					{
 						int num = printCode->u.assign.right->u.const_value;
-						fprintf(code, "li $t1 %d\n", num);
+						fprintf(code, "li $t1, %d\n", num);
 					}
 					else
 					{
 						int rightOff = findVarOff(printCode->u.assign.right);
-						fprintf(code, "lw $t1 %d($fp)\n", rightOff);
+						fprintf(code, "lw $t1, %d($fp)\n", rightOff);
 					}
-					fprintf(code, "sw $t1 %d($fp)\n", leftOff);
+					fprintf(code, "sw $t1, %d($fp)\n", leftOff);
 					break;
 				}
 			case ADDc:
@@ -86,23 +86,23 @@ void printSCODE()
 					if(printCode->u.binop.op1->kind == CONSTo)
 					{
 						int num = printCode->u.binop.op1->u.const_value;
-						fprintf(code, "li $t1 %d\n", num);
+						fprintf(code, "li $t1, %d\n", num);
 						int op2Off = findVarOff(printCode->u.binop.op2);
-						fprintf(code, "lw $t2 %d($fp)\n", op2Off);
+						fprintf(code, "lw $t2, %d($fp)\n", op2Off);
 					}
 					else if(printCode->u.binop.op2->kind == CONSTo)
 					{
 						int num = printCode->u.binop.op2->u.const_value;
-						fprintf(code, "li $t2 %d\n", num);
+						fprintf(code, "li $t2, %d\n", num);
 						int op1Off = findVarOff(printCode->u.binop.op1);
-						fprintf(code, "lw $t1 %d($fp)\n", op1Off);
+						fprintf(code, "lw $t1, %d($fp)\n", op1Off);
 					}
 					else
 					{
 						int op1Off = findVarOff(printCode->u.binop.op1);
 						int op2Off = findVarOff(printCode->u.binop.op2);
-						fprintf(code, "lw $t1 %d($fp)\n", op1Off);
-						fprintf(code, "lw $t2 %d($fp)\n", op2Off);
+						fprintf(code, "lw $t1, %d($fp)\n", op1Off);
+						fprintf(code, "lw $t2, %d($fp)\n", op2Off);
 					}
 					switch(printCode->kind)
 					{
@@ -130,8 +130,112 @@ void printSCODE()
 						default:
 							break;
 					}
-					fprintf(code, "sw $t3 %d($fp)\n", resultOff);
+					fprintf(code, "sw $t3, %d($fp)\n", resultOff);
 					break;
+				}
+			case LABELc:
+				{
+					char *label = printOperand(printCode->u.op);
+					fprintf(code, "%s:\n", label);
+					break;
+				}
+			case GOTOc:
+				{
+					char *label = printOperand(printCode->u.op);
+					fprintf(code, "j %s\n", label);
+					break;
+				}
+			case IF_GOTOc:
+				{
+					if(printCode->u.if_goto.left->kind == CONSTo)
+					{
+						int num = printCode->u.if_goto.left->u.const_value;
+						fprintf(code, "li $t1, %d\n", num);
+					}
+					else
+					{
+						int leftOff = findVarOff(printCode->u.if_goto.left);
+						fprintf(code, "lw $t1, %d($fp)\n", leftOff);
+					}
+
+					if(printCode->u.if_goto.right->kind == CONSTo)
+					{
+						int num = printCode->u.if_goto.right->u.const_value;
+						fprintf(code, "li $t2, %d\n", num);
+					}
+					else
+					{
+						int rightOff = findVarOff(printCode->u.if_goto.right);
+						fprintf(code, "lw $t1, %d($fp)\n", rightOff);
+					}
+					char *label = printOperand(printCode->u.if_goto.label);
+					switch(printCode->u.if_goto.relop_value)
+					{
+						case 1:
+							{
+								fprintf(code, "bgt $t1, $t2, %s\n", label);
+								break;
+							}
+						case 2:
+							{
+								fprintf(code, "blt $t1, $t2, %s\n", label);
+								break;
+							}
+						case 3:
+							{
+								fprintf(code, "bge $t1, $t2, %s\n", label);
+								break;
+							}
+						case 4:
+							{
+								fprintf(code, "ble $t1, $t2, %s\n", label);
+								break;
+							}
+						case 5:
+							{
+								fprintf(code, "beq $t1, $t2, %s\n", label);
+								break;
+							}
+						case 6:
+							{
+								fprintf(code, "bne $t1, $t2, %s\n", label);
+								break;
+							}
+						default:
+							break;
+					}
+					break;
+				}
+			case RETURNc:
+				{
+					fprintf(code, "addi $sp, $sp, 2048\n");
+					if(printCode->u.op->kind == CONSTo)
+					{
+						int num = printCode->u.op->u.const_value;
+						fprintf(code, "li $t1 %d\n", num);
+					}
+					else
+					{
+						int opOff = findVarOff(printCode->u.op);
+						fprintf(code, "lw $t1 %d($fp)\n", opOff);
+					}
+					fprintf(code, "move $v0, $t1\n");
+					fprintf(code, "jr $ra\n");
+					break;
+				}
+			case READc:
+				{
+					fprintf(code, "li $v0, 4\nla $a0, _prompt\nsyscall\nli $v0, 5\nsyscall\n");
+					fprintf(code, "move $t1, $v0\n");
+					int readOff = findVarOff(printCode->u.op);
+					fprintf(code, "sw $t1, %d($fp)\n", readOff);
+					break;
+				}
+			case WRITEc:
+				{
+					int writeOff = findVarOff(printCode->u.op);
+					fprintf(code, "lw $a0, %d($fp)\n", writeOff);
+					fprintf(code, "li $v0, 1\nsyscall\nli $v0, 4\nla $a0, _ret\nsyscall\n");
 				}
 			default:
 				{
@@ -217,6 +321,52 @@ int findVarOff(Operand *var)
 						conVar->nextVar = varList;
 					}
 					break;
+				}
+			}
+		case TEMPo:
+			{
+				if(nowFunc->varList == NULL)
+				{
+					funcOffset -= 4;
+					returnOff = funcOffset;
+					addrList *varList;
+					varList = malloc(sizeof(addrList));
+					varList->var = var;
+					varList->offset = returnOff;
+					varList->nextVar = NULL;
+					nowFunc->varList = varList;
+					break;
+				}
+				else
+				{
+					addrList *tmpVar;
+					addrList *conVar;
+					tmpVar = nowFunc->varList;
+					conVar = tmpVar;
+					while(tmpVar != NULL)
+					{
+						Operand *nowVar;
+						nowVar = tmpVar->var;
+						if(nowVar->kind == TEMPo && nowVar->u.temp_no == var->u.temp_no)
+						{
+							returnOff = tmpVar->offset;
+							break;
+						}
+						conVar = tmpVar;
+						tmpVar = tmpVar->nextVar;
+					}
+					if(tmpVar == NULL)
+					{
+						funcOffset -= 4;			
+						returnOff = funcOffset;
+						addrList *varList;
+						varList = malloc(sizeof(addrList));
+						varList->var = var;
+						varList->offset = returnOff;
+						varList->nextVar = NULL;
+						conVar->nextVar = varList;
+					}
+					break;	
 				}
 			}
 		default:
