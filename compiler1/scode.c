@@ -61,18 +61,41 @@ void printSCODE()
 					if(printCode->u.assign.left == NULL)
 						break;
 
-					int leftOff = findVarOff(printCode->u.assign.left);
 					if(printCode->u.assign.right->kind == CONSTo)
 					{
 						int num = printCode->u.assign.right->u.const_value;
 						fprintf(code, "li $t1, %d\n", num);
+					}
+					else if(printCode->u.assign.right->kind == ADDRo)
+					{
+						int num = findVarOff(printCode->u.assign.right->u.addr_of);
+						fprintf(code, "li $t1, %d\n", num);
+					}
+					else if(printCode->u.assign.right->kind == STARo)
+					{
+						int off = findVarOff(printCode->u.assign.right->u.addr_from);
+						fprintf(code, "lw $t2, %d($fp)\n", off);
+						fprintf(code, "add $t3, $t2, $fp\n");
+						fprintf(code, "lw $t1, 0($t3)\n");
 					}
 					else
 					{
 						int rightOff = findVarOff(printCode->u.assign.right);
 						fprintf(code, "lw $t1, %d($fp)\n", rightOff);
 					}
-					fprintf(code, "sw $t1, %d($fp)\n", leftOff);
+
+					if(printCode->u.assign.left->kind == STARo)
+					{
+						int off = findVarOff(printCode->u.assign.left->u.addr_from);
+						fprintf(code, "lw $t2, %d($fp)\n", off);
+						fprintf(code, "add $t3, $t2, $fp\n");
+						fprintf(code, "sw $t1, 0($t3)\n");
+					}
+					else
+					{
+						int leftOff = findVarOff(printCode->u.assign.left);
+						fprintf(code, "sw $t1, %d($fp)\n", leftOff);
+					}
 					break;
 				}
 			case ADDc:
@@ -82,27 +105,88 @@ void printSCODE()
 				{
 					if(printCode->u.binop.result == NULL)
 						break;
-					int resultOff = findVarOff(printCode->u.binop.result);
+				//	int resultOff = findVarOff(printCode->u.binop.result);
 					if(printCode->u.binop.op1->kind == CONSTo)
 					{
 						int num = printCode->u.binop.op1->u.const_value;
 						fprintf(code, "li $t1, %d\n", num);
-						int op2Off = findVarOff(printCode->u.binop.op2);
-						fprintf(code, "lw $t2, %d($fp)\n", op2Off);
+						if(printCode->u.binop.op2->kind == ADDRo)
+						{
+							int num2 = findVarOff(printCode->u.binop.op2->u.addr_of);
+							fprintf(code, "li $t2, %d\n", num2);
+						}
+						else if(printCode->u.binop.op2->kind == STARo)
+						{
+							int off = findVarOff(printCode->u.binop.op2->u.addr_from);
+							fprintf(code, "lw $t4, %d($fp)\n", off);
+							fprintf(code, "add $t5, $t4, $fp\n");
+							fprintf(code, "lw $t2, 0($t5)\n");
+						}
+						else
+						{
+							int op2Off = findVarOff(printCode->u.binop.op2);
+							fprintf(code, "lw $t2, %d($fp)\n", op2Off);
+						}
 					}
 					else if(printCode->u.binop.op2->kind == CONSTo)
 					{
 						int num = printCode->u.binop.op2->u.const_value;
 						fprintf(code, "li $t2, %d\n", num);
-						int op1Off = findVarOff(printCode->u.binop.op1);
-						fprintf(code, "lw $t1, %d($fp)\n", op1Off);
+						if(printCode->u.binop.op1->kind == ADDRo)
+						{
+							int num2 = findVarOff(printCode->u.binop.op1->u.addr_of);
+							fprintf(code, "li $t1, %d\n", num2);
+						}
+						else if(printCode->u.binop.op1->kind == STARo)
+						{
+							int off = findVarOff(printCode->u.binop.op1->u.addr_from);
+							fprintf(code, "lw $t4, %d($fp)\n", off);
+							fprintf(code, "add $t5, $t4, $fp\n");
+							fprintf(code, "lw $t1, 0($t5)\n");
+						}
+						else
+						{
+							int op1Off = findVarOff(printCode->u.binop.op1);
+							fprintf(code, "lw $t1, %d($fp)\n", op1Off);
+						}
 					}
 					else
-					{
-						int op1Off = findVarOff(printCode->u.binop.op1);
-						int op2Off = findVarOff(printCode->u.binop.op2);
-						fprintf(code, "lw $t1, %d($fp)\n", op1Off);
-						fprintf(code, "lw $t2, %d($fp)\n", op2Off);
+					{	
+						if(printCode->u.binop.op1->kind == ADDRo)
+						{
+							int num2 = findVarOff(printCode->u.binop.op1->u.addr_of);
+							fprintf(code, "li $t1, %d\n", num2);
+						}
+						else if(printCode->u.binop.op1->kind == STARo)
+						{
+							int off = findVarOff(printCode->u.binop.op1->u.addr_from);
+							fprintf(code, "lw $t4, %d($fp)\n", off);
+							fprintf(code, "add $t5, $t4, $fp\n");
+							fprintf(code, "lw $t1, 0($t5)\n");
+						}
+						else
+						{
+							int op1Off = findVarOff(printCode->u.binop.op1);
+							fprintf(code, "lw $t1, %d($fp)\n", op1Off);
+						}
+
+						if(printCode->u.binop.op2->kind == ADDRo)
+						{
+							int num2 = findVarOff(printCode->u.binop.op2->u.addr_of);
+							fprintf(code, "li $t2, %d\n", num2);
+						}
+						else if(printCode->u.binop.op2->kind == STARo)
+						{
+							int off = findVarOff(printCode->u.binop.op2->u.addr_from);
+							fprintf(code, "lw $t4, %d($fp)\n", off);
+							fprintf(code, "add $t5, $t4, $fp\n");
+							fprintf(code, "lw $t2, 0($t5)\n");
+						}
+						else
+						{
+							int op2Off = findVarOff(printCode->u.binop.op2);
+							fprintf(code, "lw $t2, %d($fp)\n", op2Off);
+						}
 					}
 					switch(printCode->kind)
 					{
@@ -130,7 +214,18 @@ void printSCODE()
 						default:
 							break;
 					}
-					fprintf(code, "sw $t3, %d($fp)\n", resultOff);
+					if(printCode->u.binop.result->kind == STARo)
+					{
+						int off = findVarOff(printCode->u.binop.result->u.addr_from);
+						fprintf(code, "lw $t4, %d($fp)\n", off);
+						fprintf(code, "add $t5, $t4, $fp\n");
+						fprintf(code, "sw $t3, 0($t5)\n");
+					}
+					else
+					{
+						int resultOff = findVarOff(printCode->u.binop.result);
+						fprintf(code, "sw $t3, %d($fp)\n", resultOff);
+					}
 					break;
 				}
 			case LABELc:
@@ -152,6 +247,13 @@ void printSCODE()
 						int num = printCode->u.if_goto.left->u.const_value;
 						fprintf(code, "li $t1, %d\n", num);
 					}
+					else if(printCode->u.if_goto.left->kind == STARo)
+					{
+						int off = findVarOff(printCode->u.if_goto.left->u.addr_from);
+						fprintf(code, "lw $t3, %d($fp)\n", off);
+						fprintf(code, "add $t4, $t3, $fp\n");
+						fprintf(code, "lw $t1, 0($t4)\n");
+					}
 					else
 					{
 						int leftOff = findVarOff(printCode->u.if_goto.left);
@@ -163,10 +265,17 @@ void printSCODE()
 						int num = printCode->u.if_goto.right->u.const_value;
 						fprintf(code, "li $t2, %d\n", num);
 					}
+					else if(printCode->u.if_goto.right->kind == STARo)
+					{
+						int off = findVarOff(printCode->u.if_goto.right->u.addr_from);
+						fprintf(code, "lw $t3, %d($fp)\n",off);
+						fprintf(code, "add $t4, $t3, $fp\n");
+						fprintf(code, "lw $t2, 0($t4)\n");
+					}
 					else
 					{
 						int rightOff = findVarOff(printCode->u.if_goto.right);
-						fprintf(code, "lw $t1, %d($fp)\n", rightOff);
+						fprintf(code, "lw $t2, %d($fp)\n", rightOff);
 					}
 					char *label = printOperand(printCode->u.if_goto.label);
 					switch(printCode->u.if_goto.relop_value)
@@ -214,6 +323,13 @@ void printSCODE()
 						int num = printCode->u.op->u.const_value;
 						fprintf(code, "li $t1 %d\n", num);
 					}
+					else if(printCode->u.op->kind == STARo)
+					{
+						int off = findVarOff(printCode->u.op->u.addr_from);
+						fprintf(code, "lw $t2, %d($fp)\n", off);
+						fprintf(code, "add $t3, $t2, $fp\n");
+						fprintf(code, "lw $t1, 0($t3)\n");
+					}
 					else
 					{
 						int opOff = findVarOff(printCode->u.op);
@@ -227,15 +343,107 @@ void printSCODE()
 				{
 					fprintf(code, "li $v0, 4\nla $a0, _prompt\nsyscall\nli $v0, 5\nsyscall\n");
 					fprintf(code, "move $t1, $v0\n");
+					if(printCode->u.op->kind == STARo)
+					{
+						int off = findVarOff(printCode->u.op->u.addr_from);
+						fprintf(code, "lw $t2, %d($fp)\n", off);
+						fprintf(code, "add $t3, $t2, $fp\n");
+						fprintf(code, "sw $t1, 0($t3)\n");
+						break;
+					}
 					int readOff = findVarOff(printCode->u.op);
 					fprintf(code, "sw $t1, %d($fp)\n", readOff);
 					break;
 				}
 			case WRITEc:
 				{
-					int writeOff = findVarOff(printCode->u.op);
-					fprintf(code, "lw $a0, %d($fp)\n", writeOff);
+					if(printCode->u.op->kind == CONSTo)
+					{
+						int num = printCode->u.op->u.const_value;
+						fprintf(code, "li $a0, %d\n", num);
+					}
+					else if(printCode->u.op->kind == STARo)
+					{
+						int off = findVarOff(printCode->u.op->u.addr_from);
+						fprintf(code, "lw $t1, %d($fp)\n", off);
+						fprintf(code, "add $t2, $t1, $fp\n");
+						fprintf(code, "lw $a0, 0($t2)\n");
+					}
+					else
+					{
+						int writeOff = findVarOff(printCode->u.op);
+						fprintf(code, "lw $a0, %d($fp)\n", writeOff);
+					}
 					fprintf(code, "li $v0, 1\nsyscall\nli $v0, 4\nla $a0, _ret\nsyscall\n");
+					break;
+				}
+			case ARGc:
+				{
+					if(printCode->u.op->kind == CONSTo)
+					{
+						int num = printCode->u.op->u.const_value;
+						fprintf(code, "li $t1, %d\n", num);
+					}
+					else
+					{
+						int argOff = findVarOff(printCode->u.op);
+						fprintf(code, "lw $t1, %d($fp)\n", argOff);
+					}
+					funcOffset -= 4;
+					fprintf(code, "sw $t1, %d($fp)\n", funcOffset);
+					break;
+				}
+			case CALL_FUNCc:
+				{
+					funcOffset -= 4;
+					fprintf(code, "sw $fp, %d($fp)\n", funcOffset);
+					funcOffset -= 4;
+					fprintf(code, "sw $ra, %d($fp)\n", funcOffset);
+					fprintf(code, "addi $fp, $fp, %d\n", funcOffset);
+					fprintf(code, "jal %s\n", printCode->u.call_func.func->u.func_name);
+					fprintf(code, "lw $ra, 0($fp)\nlw $fp, 4($fp)\n");
+					fprintf(code, "move $t1, $v0\n");
+
+					if(printCode->u.call_func.var->kind == STARo)
+					{
+						int off = findVarOff(printCode->u.call_func.var->u.addr_from);
+						fprintf(code, "lw $t2, %d($fp)\n", off);
+						fprintf(code, "add $t3, $t2, $fp\n");
+						fprintf(code, "sw $t1, 0($t3)\n");
+					}
+					int varOff = findVarOff(printCode->u.call_func.var);
+					fprintf(code, "sw $t1, %d($fp)\n", varOff);
+					break;
+				}
+			case PARAMc:
+				{
+					fprintf(code, "lw $t1, %d($fp)\n", funcParam);
+					funcParam += 4;
+					int opOff = findVarOff(printCode->u.op);
+					fprintf(code, "sw $t1, %d($fp)\n", opOff);
+					break;
+				}
+			case DECc:
+				{
+					int size = printCode->u.dec.size;
+					funcOffset -= size;
+					addrList *array;
+					array = malloc(sizeof(addrList));
+					array->var = printCode->u.dec.var;
+					array->offset = funcOffset;
+					array->nextVar = NULL;
+					if(nowFunc->varList == NULL)
+					{
+						nowFunc->varList = array;
+						break;
+					}
+					addrList *tmpVar = nowFunc->varList;
+					while(tmpVar->nextVar != NULL)
+					{
+						tmpVar = tmpVar->nextVar;
+					}
+					tmpVar->nextVar = array;
+					break;
 				}
 			default:
 				{
@@ -311,7 +519,7 @@ int findVarOff(Operand *var)
 					}
 					if(tmpVar == NULL)
 					{
-						funcOffset -= 4;			
+						funcOffset -= 4;
 						returnOff = funcOffset;
 						addrList *varList;
 						varList = malloc(sizeof(addrList));
@@ -371,6 +579,7 @@ int findVarOff(Operand *var)
 			}
 		default:
 			{
+				printf("wrong type!%d\n", var->kind);
 				break;
 			}
 	}

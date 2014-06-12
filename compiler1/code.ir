@@ -1,14 +1,130 @@
-FUNCTION main :
-b := #5
-READ a
+FUNCTION power :
+PARAM base1
+PARAM p1
+ret1 := #1
 LABEL label1 :
-IF a < #15 GOTO label2
+IF p1 > #0 GOTO label2
 GOTO label3
 LABEL label2 :
-a := a + #1
-WRITE a
+ret1 := ret1 * base1
+p1 := p1 - #1
 GOTO label1
 LABEL label3 :
-a := b / a
-WRITE a
+RETURN ret1
+FUNCTION mod :
+PARAM number2
+PARAM m2
+t14 := number2 / m2
+t13 := t14 * m2
+t11 := number2 - t13
+RETURN t11
+FUNCTION getNumDigits :
+PARAM number3
+ret3 := #0
+IF number3 < #0 GOTO label4
+GOTO label5
+LABEL label4 :
+RETURN #-1
+LABEL label5 :
+LABEL label6 :
+IF number3 > #0 GOTO label7
+GOTO label8
+LABEL label7 :
+number3 := number3 / #10
+ret3 := ret3 + #1
+GOTO label6
+LABEL label8 :
+RETURN ret3
+FUNCTION isNarcissistic :
+PARAM number4
+ARG number4
+numDigits4 := CALL getNumDigits
+sum4 := #0
+n4 := number4
+LABEL label9 :
+IF n4 > #0 GOTO label10
+GOTO label11
+LABEL label10 :
+ARG #10
+ARG n4
+s4 := CALL mod
+t42 := n4 - s4
+n4 := t42 / #10
+ARG numDigits4
+ARG s4
+t48 := CALL power
+sum4 := sum4 + t48
+GOTO label9
+LABEL label11 :
+IF sum4 == number4 GOTO label12
+GOTO label13
+LABEL label12 :
+RETURN #1
+GOTO label14
+LABEL label13 :
 RETURN #0
+LABEL label14 :
+FUNCTION printHexDigit :
+PARAM digit6
+IF digit6 < #10 GOTO label15
+GOTO label16
+LABEL label15 :
+WRITE digit6
+GOTO label17
+LABEL label16 :
+t60 := #0 - digit6
+WRITE t60
+LABEL label17 :
+RETURN #0
+FUNCTION printHex :
+PARAM number5
+DEC a5 16
+j5 := #0
+LABEL label18 :
+IF j5 < #4 GOTO label19
+GOTO label20
+LABEL label19 :
+t111 := j5 * #4
+t70 := &a5 + t111
+ARG #16
+ARG number5
+t71 := CALL mod
+*t70 := t71
+number5 := number5 / #16
+j5 := j5 + #1
+GOTO label18
+LABEL label20 :
+j5 := #3
+LABEL label21 :
+IF j5 >= #0 GOTO label22
+GOTO label23
+LABEL label22 :
+t113 := j5 * #4
+t87 := &a5 + t113
+a := *t87
+ARG a
+t88 := CALL printHexDigit
+j5 := j5 - #1
+GOTO label21
+LABEL label23 :
+RETURN #0
+FUNCTION main :
+count := #0
+i := #9474
+LABEL label24 :
+IF i < #9475 GOTO label25
+GOTO label26
+LABEL label25 :
+ARG i
+t98 := CALL isNarcissistic
+IF t98 == #1 GOTO label27
+GOTO label28
+LABEL label27 :
+ARG i
+t101 := CALL printHex
+count := count + #1
+LABEL label28 :
+i := i + #1
+GOTO label24
+LABEL label26 :
+RETURN count
