@@ -44,6 +44,6 @@ void insertFuncList(char *name);
 //void insertVarList(Operand *var, int offset);
 int findVarOff(Operand *var);
 
-void printSCODE();
+void printSCODE(char *file);
 
 #endif

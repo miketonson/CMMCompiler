@@ -21,7 +21,7 @@
 int funcParam;
 int funcOffset;
 
-void printSCODE()
+void printSCODE(char *file)
 {
 	InterCode *IRList = interCodeList;
 	if(IRList == NULL)
@@ -30,7 +30,7 @@ void printSCODE()
 		return;
 	}
 	FILE *code;
-	code = fopen("code.s", "w");
+	code = fopen(file, "w");
 	fprintf(code, ".data\n_prompt: .asciiz \"Enter an integer:\"\n_ret: .asciiz \"\\n\"\n.globl main\n.text\n");
 	
 	InterCode *printCode;

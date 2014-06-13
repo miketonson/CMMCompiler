@@ -35,8 +35,8 @@ int main(int argc, char** argv){
 	optIRCode3();
 	optIRCode4();
 
-	printCodeList();
-	printSCODE();
+	//printCodeList();
+	printSCODE(argv[2]);
 	/* code end */
 	return 0;
 }
