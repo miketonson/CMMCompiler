@@ -6,7 +6,7 @@ CMM compiler
 
 - [x] Lexical Analysis
 - [x] Syntax Analysis 
-- [x] Semantic Analysis(testing...)
+- [x] Semantic Analysis
 - [x] Intermediate-code Generator
 - [x] Machine-code Generator
 
