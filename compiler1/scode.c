@@ -384,6 +384,13 @@ void printSCODE(char *file)
 						int num = printCode->u.op->u.const_value;
 						fprintf(code, "li $t1, %d\n", num);
 					}
+				 	else if(printCode->u.op->kind == STARo)
+					{
+						int off = findVarOff(printCode->u.op->u.addr_from);
+						fprintf(code, "lw $t2, %d($fp)\n", off);
+						fprintf(code, "add $t3, $t2, $fp\n");
+						fprintf(code, "lw $t1, 0($t3)\n");
+					}
 					else
 					{
 						int argOff = findVarOff(printCode->u.op);

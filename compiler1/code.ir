@@ -1,74 +1,129 @@
-FUNCTION josef :
-PARAM m
-DEC a 84
-i := #0
-k := #0
+FUNCTION power :
+PARAM base1
+PARAM p1
+ret1 := #1
 LABEL label1 :
-IF i < #21 GOTO label2
+IF p1 > #0 GOTO label2
 GOTO label3
 LABEL label2 :
-t90 := i * #4
-t9 := &a + t90
-t10 := i + #1
-*t9 := t10
-i := i + #1
+ret1 := ret1 * base1
+p1 := p1 - #1
 GOTO label1
 LABEL label3 :
-i := #0
+RETURN ret1
+FUNCTION mod :
+PARAM number2
+PARAM m2
+t14 := number2 / m2
+t13 := t14 * m2
+t11 := number2 - t13
+RETURN t11
+FUNCTION getNumDigits :
+PARAM number3
+ret3 := #0
+IF number3 < #0 GOTO label4
+GOTO label5
 LABEL label4 :
-IF i < #21 GOTO label5
-GOTO label6
+RETURN #-1
 LABEL label5 :
-j := #1
-LABEL label7 :
-IF j < m GOTO label8
-GOTO label9
-LABEL label8 :
-LABEL label10 :
-t92 := k * #4
-t27 := &a + t92
-IF *t27 == #0 GOTO label11
-GOTO label12
-LABEL label11 :
-t29 := k + #1
-t35 := k + #1
-t33 := t35 / #21
-t30 := t33 * #21
-k := t29 - t30
-GOTO label10
-LABEL label12 :
-j := j + #1
-t43 := k + #1
-t49 := k + #1
-t47 := t49 / #21
-t44 := t47 * #21
-k := t43 - t44
-GOTO label7
-LABEL label9 :
-LABEL label13 :
-t94 := k * #4
-t58 := &a + t94
-IF *t58 == #0 GOTO label14
-GOTO label15
-LABEL label14 :
-t60 := k + #1
-t66 := k + #1
-t64 := t66 / #21
-t61 := t64 * #21
-k := t60 - t61
-GOTO label13
-LABEL label15 :
-t96 := k * #4
-t75 := &a + t96
-WRITE *t75
-t98 := k * #4
-t80 := &a + t98
-*t80 := #0
-i := i + #1
-GOTO label4
 LABEL label6 :
+IF number3 > #0 GOTO label7
+GOTO label8
+LABEL label7 :
+number3 := number3 / #10
+ret3 := ret3 + #1
+GOTO label6
+LABEL label8 :
+RETURN ret3
+FUNCTION isNarcissistic :
+PARAM number4
+ARG number4
+numDigits4 := CALL getNumDigits
+sum4 := #0
+n4 := number4
+LABEL label9 :
+IF n4 > #0 GOTO label10
+GOTO label11
+LABEL label10 :
+ARG #10
+ARG n4
+s4 := CALL mod
+t42 := n4 - s4
+n4 := t42 / #10
+ARG numDigits4
+ARG s4
+t48 := CALL power
+sum4 := sum4 + t48
+GOTO label9
+LABEL label11 :
+IF sum4 == number4 GOTO label12
+GOTO label13
+LABEL label12 :
+RETURN #1
+GOTO label14
+LABEL label13 :
+RETURN #0
+LABEL label14 :
+FUNCTION printHexDigit :
+PARAM digit6
+IF digit6 < #10 GOTO label15
+GOTO label16
+LABEL label15 :
+WRITE digit6
+GOTO label17
+LABEL label16 :
+t60 := #0 - digit6
+WRITE t60
+LABEL label17 :
+RETURN #0
+FUNCTION printHex :
+PARAM number5
+DEC a5 16
+j5 := #0
+LABEL label18 :
+IF j5 < #4 GOTO label19
+GOTO label20
+LABEL label19 :
+t110 := j5 * #4
+t70 := &a5 + t110
+ARG #16
+ARG number5
+t71 := CALL mod
+*t70 := t71
+number5 := number5 / #16
+j5 := j5 + #1
+GOTO label18
+LABEL label20 :
+j5 := #3
+LABEL label21 :
+IF j5 >= #0 GOTO label22
+GOTO label23
+LABEL label22 :
+t112 := j5 * #4
+t88 := &a5 + t112
+ARG *t88
+t83 := CALL printHexDigit
+j5 := j5 - #1
+GOTO label21
+LABEL label23 :
 RETURN #0
 FUNCTION main :
-ARG #5
-t86 := CALL josef
-RETURN #0
+count := #0
+i := #9474
+LABEL label24 :
+IF i < #9475 GOTO label25
+GOTO label26
+LABEL label25 :
+ARG i
+t97 := CALL isNarcissistic
+IF t97 == #1 GOTO label27
+GOTO label28
+LABEL label27 :
+ARG i
+t100 := CALL printHex
+count := count + #1
+LABEL label28 :
+i := i + #1
+GOTO label24
+LABEL label26 :
+RETURN count
